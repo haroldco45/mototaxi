@@ -3,48 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MotoApp Real</title>
+    <title>MotoApp Caucasia</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        body { margin: 0; display: flex; flex-direction: column; height: 100vh; font-family: sans-serif; }
-        /* Ahora el mapa sí tendrá tamaño real */
+        body { margin: 0; display: flex; flex-direction: column; height: 100vh; font-family: 'Segoe UI', sans-serif; }
+        
         #map { flex-grow: 1; width: 100%; }
-        .container { padding: 20px; background: white; border-radius: 20px 20px 0 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
-        input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-        .btn-request { width: 100%; padding: 15px; background: #ffcc00; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+        .container { 
+            padding: 20px; 
+            background: white; 
+            border-radius: 20px 20px 0 0; 
+            box-shadow: 0 -2px 15px rgba(0,0,0,0.2); 
+            z-index: 1000;
+        }
+
+        h2 { margin: 0 0 15px 0; font-size: 1.3rem; }
+
+        .input-group { margin-bottom: 15px; }
+
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 5px 0; 
+            border: 1px solid #ddd; 
+            border-radius: 10px; 
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        .price-tag { 
+            text-align: center; 
+            margin: 10px 0; 
+            font-size: 1.1rem; 
+            color: #333;
+        }
+
+        .btn-request { 
+            width: 100%; 
+            padding: 16px; 
+            background: #ffcc00; 
+            border: none; 
+            border-radius: 12px; 
+            font-weight: bold; 
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
 
-    <div id="map"></div> <div class="container">
-        <h3>¿A dónde vas?</h3>
-        <input type="text" placeholder="📍 Origen" value="Ubicación detectada">
-        <input type="text" id="destino" placeholder="🏁 ¿A dónde quieres ir?">
-        <p style="text-align:center">Tarifa: <b>$5.000</b></p>
-        <button class="btn-request" onclick="pedir()">SOLICITAR MOTOTAXI</button>
+    <div id="map"></div>
+
+    <div class="container">
+        <h2>¿A dónde vas hoy?</h2>
+        
+        <div class="input-group">
+            <input type="text" id="origen" placeholder="📍 Origen" value="Mi ubicación (Caucasia)">
+            <input type="text" id="destino" placeholder="🏁 Toca el mapa para fijar destino" readonly>
+        </div>
+
+        <div class="price-tag">
+            Tarifa estimada: <strong id="tarifa">$ 5.000</strong>
+        </div>
+
+        <button class="btn-request" onclick="solicitar()">SOLICITAR MOTOTAXI</button>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <script>
-        // 3. Inicializar el mapa (centrado en una coordenada ejemplo)
-        // [Latitud, Longitud] - Ejemplo: Caucasia, Antioquia
+        // 1. Inicializar mapa en Caucasia (basado en tu imagen)
         var map = L.map('map').setView([7.986, -75.193], 15);
 
-        // 4. Cargar las imágenes del mapa desde OpenStreetMap
+        // 2. Cargar capa de diseño del mapa
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // 5. Agregar un marcador para la moto
-        var marker = L.marker([7.986, -75.193]).addTo(map)
-            .bindPopup('Tu mototaxista está aquí')
-            .openPopup();
+        // 3. Icono para el Mototaxista (Azul) y Destino (Rojo)
+        var motoIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41], iconAnchor: [12, 41]
+        });
 
-        function pedir() {
-            alert("Buscando conductor cerca...");
+        var destinoIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41], iconAnchor: [12, 41]
+        });
+
+        // 4. Colocar la moto inicial
+        L.marker([7.988, -75.192], {icon: motoIcon}).addTo(map).bindPopup("Mototaxista disponible");
+
+        var marcadorDestino;
+
+        // 5. Lógica para "meter la dirección" tocando el mapa
+        map.on('click', function(e) {
+            if (marcadorDestino) {
+                map.removeLayer(marcadorDestino);
+            }
+            
+            marcadorDestino = L.marker(e.latlng, {icon: destinoIcon}).addTo(map);
+            
+            // Actualizar el texto del input con coordenadas simples
+            document.getElementById('destino').value = "Destino: " + e.latlng.lat.toFixed(4) + ", " + e.latlng.lng.toFixed(4);
+            
+            // Simulación de cambio de tarifa por distancia
+            document.getElementById('tarifa').innerText = "$ 6.500";
+        });
+
+        function solicitar() {
+            var destValue = document.getElementById('destino').value;
+            if(destValue === "") {
+                alert("Por favor, toca el mapa para indicar a dónde vas.");
+            } else {
+                alert("Conectando con la moto más cercana a " + destValue);
+            }
         }
     </script>
 </body>
