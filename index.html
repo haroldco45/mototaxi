@@ -7,14 +7,15 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { margin: 0; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; background: #f0f2f5; }
-        #map { flex-grow: 1; width: 100%; }
+        #map { flex-grow: 1; width: 100%; z-index: 1; }
         .panel { padding: 20px; background: white; border-radius: 25px 25px 0 0; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); z-index: 1000; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
-        .btn-yellow { background: #ffcc00; }
-        .btn-blue { background: #007bff; color: white; }
-        .btn-call { background: #28a745; color: white; display: none; } /* Botón de llamada oculto por defecto */
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; margin-bottom: 10px; }
+        .btn-yellow { background: #ffcc00; color: #000; }
+        .btn-blue { background: #007bff; color: #fff; }
+        .btn-call { background: #28a745; color: white; text-decoration: none; display: none; text-align: center; line-height: 50px; border-radius: 12px; font-weight: bold; margin-bottom: 10px; }
         .hidden { display: none; }
+        .info-box { text-align: center; font-size: 14px; margin-bottom: 10px; color: #333; }
     </style>
 </head>
 <body>
@@ -29,10 +30,12 @@
 
         <div id="vista-pasajero" class="hidden">
             <input type="text" id="destino" placeholder="🏁 Toca el mapa para el destino" readonly>
-            <div id="info-moto" style="margin-bottom:10px; font-weight:bold; text-align:center;"></div>
-            <a id="btn-llamar" href="#" class="btn-call" style="text-decoration:none; display:none; text-align:center; line-height:50px;">📞 LLAMAR AL CONDUCTOR</a>
+            <div id="info-moto" class="info-box">Tarifa estimada: <strong id="tarifa">$ 5.000</strong></div>
+            
+            <a id="btn-llamar" href="#" class="btn-call">📞 LLAMAR AL CONDUCTOR</a>
+            
             <button class="btn-yellow" onclick="solicitar()">SOLICITAR AHORA</button>
-            <button onclick="location.reload()">Volver</button>
+            <button onclick="location.reload()" style="background:none; color:#007bff;">Volver</button>
         </div>
 
         <div id="vista-moto" class="hidden">
@@ -40,6 +43,7 @@
             <input type="text" id="tel-moto" placeholder="Tu Celular (para llamadas)">
             <input type="text" id="placa-moto" placeholder="Placa de la Moto">
             <button id="btn-activar" class="btn-blue" onclick="activarMoto()">ACTIVAR DISPONIBILIDAD</button>
+            <button onclick="location.reload()" style="background:none; color:#007bff;">Volver</button>
         </div>
     </div>
 
@@ -48,7 +52,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // CONFIGURACIÓN DE TU CAPTURA
+        // CONFIGURACIÓN OBTENIDA DE TU PROYECTO
         const firebaseConfig = {
             apiKey: "AIzaSyC6Mcmm-TBrFuTiQ0IjIHq9XD620DNsI",
             authDomain: "motoapp-e4261.firebaseapp.com",
@@ -62,15 +66,19 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        // Mapa centrado en Caucasia
         var map = L.map('map').setView([7.986, -75.193], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         var motoMarkers = {};
+        var blueIcon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', iconSize: [25, 41], iconAnchor: [12, 41] });
+        var redIcon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', iconSize: [25, 41], iconAnchor: [12, 41] });
 
+        // Navegación entre pantallas
         window.irAPasajero = () => {
             document.getElementById('seleccion').classList.add('hidden');
             document.getElementById('vista-pasajero').classList.remove('hidden');
-            escucharMotos();
+            conectarPasajero();
         };
 
         window.irAMoto = () => {
@@ -78,19 +86,20 @@
             document.getElementById('vista-moto').classList.remove('hidden');
         };
 
-        // LÓGICA PARA VER MOTOS Y LLAMAR
-        function escucharMotos() {
+        // LÓGICA DEL PASAJERO
+        function conectarPasajero() {
             onValue(ref(db, 'conductores/'), (snapshot) => {
                 const data = snapshot.val();
                 for (let id in data) {
                     const m = data[id];
                     if (!motoMarkers[id]) {
-                        motoMarkers[id] = L.marker([m.lat, m.lng], {
-                            icon: L.icon({iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', iconSize:[25,41]})
-                        }).addTo(map).on('click', () => {
-                            document.getElementById('info-moto').innerText = "Conductor: " + m.nombre;
-                            document.getElementById('btn-llamar').href = "tel:" + m.telefono;
-                            document.getElementById('btn-llamar').style.display = "block";
+                        motoMarkers[id] = L.marker([m.lat, m.lng], {icon: blueIcon}).addTo(map);
+                        // Al tocar la moto azul, mostrar info y botón de llamada
+                        motoMarkers[id].on('click', () => {
+                            document.getElementById('info-moto').innerHTML = "🛺 <b>Conductor:</b> " + m.nombre + "<br><b>Placa:</b> " + id;
+                            const btn = document.getElementById('btn-llamar');
+                            btn.href = "tel:" + m.telefono;
+                            btn.style.display = "block";
                         });
                     } else {
                         motoMarkers[id].setLatLng([m.lat, m.lng]);
@@ -99,33 +108,44 @@
             });
         }
 
+        // LÓGICA DEL MOTOTAXISTA
         window.activarMoto = () => {
             const nombre = document.getElementById('nombre-moto').value;
-            const placa = document.getElementById('placa-moto').value;
             const tel = document.getElementById('tel-moto').value;
-            
-            if(!nombre || !placa || !tel) return alert("Llena todos los campos");
+            const placa = document.getElementById('placa-moto').value;
+
+            if(!nombre || !tel || !placa) return alert("Por favor, llena todos los campos");
 
             navigator.geolocation.watchPosition((pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                // Guardar en Firebase
                 set(ref(db, 'conductores/' + placa), {
                     nombre: nombre,
                     telefono: tel,
-                    lat: pos.coords.latitude,
-                    lng: pos.coords.longitude
+                    lat: lat,
+                    lng: lng
                 });
-            }, null, { enableHighAccuracy: true });
-            
-            document.getElementById('btn-activar').innerText = "EN LÍNEA ✅";
+                map.setView([lat, lng], 16);
+            }, (err) => alert("Error GPS: " + err.message), { enableHighAccuracy: true });
+
+            document.getElementById('btn-activar').innerText = "CONECTADO ✅";
             document.getElementById('btn-activar').style.background = "#28a745";
         };
 
-        // Marcar destino
-        var dMark;
+        // Marcar destino con punto rojo
+        var marcadorDest;
         map.on('click', (e) => {
-            if (dMark) map.removeLayer(dMark);
-            dMark = L.marker(e.latlng, {icon: L.icon({iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', iconSize:[25,41]})}).addTo(map);
-            document.getElementById('destino').value = e.latlng.lat.toFixed(4) + ", " + e.latlng.lng.toFixed(4);
+            if (marcadorDest) map.removeLayer(marcadorDest);
+            marcadorDest = L.marker(e.latlng, {icon: redIcon}).addTo(map);
+            document.getElementById('destino').value = "Destino: " + e.latlng.lat.toFixed(4) + ", " + e.latlng.lng.toFixed(4);
+            document.getElementById('tarifa').innerText = "$ 6.500";
         });
+
+        window.solicitar = () => {
+            if(!document.getElementById('destino').value) return alert("Primero toca el mapa para elegir destino");
+            alert("Solicitud enviada a los mototaxistas cercanos.");
+        };
     </script>
 </body>
 </html>
