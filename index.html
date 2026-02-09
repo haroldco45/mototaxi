@@ -3,36 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>MotoApp Caucasia</title>
+    <title>MotoApp Caucasia - Vibras Positivas</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        /* Ajuste total para evitar la pantalla blanca/gris */
         html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
-        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; }
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; background: #f0f2f5; }
         
-        /* El mapa ocupa el 65% superior fijo */
-        #map { height: 65vh; width: 100%; position: relative; z-index: 1; background: #eee; }
-        
+        /* El mapa ocupa el 65% de la pantalla */
+        #map { height: 65vh; width: 100%; position: relative; z-index: 1; }
+
         /* El panel ocupa el 35% inferior */
         .panel { 
             height: 35vh; 
             background: white; 
-            box-shadow: 0 -3px 12px rgba(0,0,0,0.3); 
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.2); 
+            z-index: 1000; 
             padding: 15px; 
             box-sizing: border-box;
-            z-index: 1000;
+            border-radius: 20px 20px 0 0;
             overflow-y: auto;
         }
 
-        input { width: 100%; padding: 12px; margin: 6px 0; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
-        button { width: 100%; padding: 14px; margin: 6px 0; border-radius: 12px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #eee; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
+        input:focus { border-color: #ffcc00; outline: none; }
+        
+        button { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; margin-bottom: 10px; }
         
         .btn-yellow { background: #ffcc00; color: #000; }
         .btn-blue { background: #007bff; color: white; }
-        .btn-admin { background: #333; color: white; font-size: 12px; }
+        .btn-admin { background: #343a40; color: white; font-size: 11px; }
+        
+        .btn-call { 
+            display: none; 
+            background: #28a745; 
+            color: white; 
+            text-decoration: none; 
+            text-align: center; 
+            padding: 15px; 
+            border-radius: 12px; 
+            font-weight: bold; 
+            font-size: 18px; 
+            margin-top: 5px;
+            box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
+        }
+
         .hidden { display: none !important; }
+        .info-header { text-align: center; font-weight: bold; color: #2e7d32; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -41,30 +59,32 @@
 
     <div class="panel">
         <div id="seleccion">
-            <button class="btn-yellow" onclick="irPasajero()">PASAJERO ($5.000)</button>
-            <button class="btn-blue" onclick="mostrarSeccion('vista-moto')">CONDUCTOR</button>
+            <button class="btn-yellow" onclick="irPasajero()">PEDIR MOTO ($5.000)</button>
+            <button class="btn-blue" onclick="mostrarSeccion('vista-moto')">MODO CONDUCTOR</button>
             <button class="btn-admin" onclick="accesoAdmin()">⚙️ PANEL ADMIN</button>
         </div>
 
         <div id="vista-pasajero" class="hidden">
-            <div style="text-align:center; font-weight:bold; color:#2e7d32; margin-bottom:5px;">TARIFA FIJA: $5.000</div>
-            <input type="text" id="destino" placeholder="🏁 Toca el mapa para el destino">
-            <a id="btn-llamar" href="#" class="btn-blue" style="display:none; text-align:center; text-decoration:none; padding:12px; background:#28a745; border-radius:12px;">📞 LLAMAR CONDUCTOR</a>
-            <button onclick="location.reload()" style="background:#eee; margin-top:10px;">Volver</button>
+            <div class="info-header">TARIFA FIJA: $5.000 COP</div>
+            <input type="text" id="destino" placeholder="📍 Toca el mapa para el destino">
+            <div id="nombre-conductor" style="text-align:center; font-size:14px; margin:5px; font-weight:bold;"></div>
+            <a id="btn-llamar" href="#" class="btn-call">📞 LLAMAR CONDUCTOR</a>
+            <button onclick="location.reload()" style="background:none; color:#007bff; font-size:12px;">Volver al Inicio</button>
         </div>
 
         <div id="vista-moto" class="hidden">
             <input type="text" id="nom" placeholder="Tu Nombre">
-            <input type="text" id="tel" placeholder="Tu Celular">
-            <input type="text" id="pla" placeholder="Placa">
+            <input type="text" id="tel" placeholder="Tu Celular (10 dígitos)">
+            <input type="text" id="pla" placeholder="Placa de la Moto">
             <button id="btn-on" class="btn-blue" onclick="activarMoto()">ACTIVAR DISPONIBILIDAD</button>
-            <button onclick="location.reload()" style="background:#eee;">Volver</button>
+            <button onclick="location.reload()" style="background:none; color:#007bff; font-size:12px;">Volver</button>
         </div>
 
         <div id="vista-admin" class="hidden">
+            <h4 style="margin:0 0 10px 0;">Autorizar Placa</h4>
             <input type="text" id="p-adm" placeholder="Placa a Activar">
-            <button class="btn-yellow" onclick="autorizarPlaca()">ACTIVAR 30 DÍAS</button>
-            <button onclick="location.reload()">Cerrar</button>
+            <button class="btn-yellow" onclick="autorizarPago()">ACTIVAR 30 DÍAS</button>
+            <button onclick="location.reload()" style="background:none; color:red;">Salir de Admin</button>
         </div>
     </div>
 
@@ -74,7 +94,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // Credenciales desde tus capturas
+        // Configuración de tu Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyC6Mcmm-TBrFuTiQ0IjIHq9XD620DNsI",
             authDomain: "motoapp-e4261.firebaseapp.com",
@@ -94,36 +114,62 @@
 
         window.mostrarSeccion = (id) => {
             document.getElementById('seleccion').classList.add('hidden');
-            document.querySelectorAll('.panel > div:not(#seleccion)').forEach(d => d.classList.add('hidden'));
+            document.querySelectorAll('.panel > div:not(#seleccion)').forEach(div => div.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
         };
 
+        // --- LÓGICA PASAJERO ---
         window.irPasajero = () => {
             mostrarSeccion('vista-pasajero');
+            escucharMotos();
+        };
+
+        function escucharMotos() {
             onValue(ref(db, 'conductores/'), (snap) => {
                 const data = snap.val();
                 for(let id in data){
-                    const m = data[id];
-                    L.marker([m.lat, m.lng], {
-                        icon: L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', iconSize:[25,41]})
-                    }).addTo(map).on('click', () => {
-                        document.getElementById('btn-llamar').href = "tel:" + m.telefono;
-                        document.getElementById('btn-llamar').style.display = "block";
-                        alert("Moto de: " + m.nombre);
+                    const d = data[id];
+                    const marker = L.marker([d.lat, d.lng], {
+                        icon: L.icon({
+                            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                            iconSize: [30, 45]
+                        })
+                    }).addTo(map);
+
+                    marker.on('click', function() {
+                        const btn = document.getElementById('btn-llamar');
+                        btn.href = "tel:" + d.telefono;
+                        btn.style.display = "block";
+                        document.getElementById('nombre-conductor').innerHTML = "🛺 " + d.nombre + " (Placa: " + id + ")";
                     });
                 }
             });
-        };
+        }
 
-        window.accesoAdmin = () => { if(prompt("Clave:") === "1234") mostrarSeccion('vista-admin'); };
+        // Tocar el mapa para el destino (Marcador Rojo)
+        map.on('click', (e) => {
+            if (window.destMarker) map.removeLayer(window.destMarker);
+            window.destMarker = L.marker(e.latlng, {
+                icon: L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                    iconSize: [25, 41]
+                })
+            }).addTo(map);
+            document.getElementById('destino').value = "Destino: " + e.latlng.lat.toFixed(4) + ", " + e.latlng.lng.toFixed(4);
+        });
 
-        window.autorizarPlaca = async () => {
+        // --- LÓGICA ADMIN ---
+        window.accesoAdmin = () => { if(prompt("Clave Admin:") === "1234") mostrarSeccion('vista-admin'); };
+
+        window.autorizarPago = async () => {
             const p = document.getElementById('p-adm').value.toUpperCase();
+            if(!p) return alert("Escribe la placa");
             let f = new Date(); f.setDate(f.getDate() + 30);
             await set(ref(db, 'usuarios_moto/' + p), { vencimiento: f.toISOString() });
-            alert("Placa " + p + " activada por 30 días!");
+            alert("Placa " + p + " ACTIVADA por 30 días.");
         };
 
+        // --- LÓGICA CONDUCTOR ---
         window.activarMoto = async () => {
             const p = document.getElementById('pla').value.toUpperCase();
             const snap = await get(ref(db, 'usuarios_moto/' + p));
@@ -135,15 +181,14 @@
                         telefono: document.getElementById('tel').value,
                         lat: pos.coords.latitude, lng: pos.coords.longitude
                     });
-                }, (err) => alert("GPS Error: " + err.message), {enableHighAccuracy: true});
-                document.getElementById('btn-on').innerText = "ONLINE ✅";
+                }, (err) => alert("Error de GPS: Por favor activa la ubicación."), {enableHighAccuracy: true});
+                
+                document.getElementById('btn-on').innerText = "CONECTADO ✅";
                 document.getElementById('btn-on').style.background = "#28a745";
-            } else { alert("Suscripción inactiva. El Admin debe autorizar la placa " + p + "."); }
+            } else { 
+                alert("Suscripción Inactiva. El Admin debe autorizar la placa " + p); 
+            }
         };
-
-        map.on('click', e => { 
-            document.getElementById('destino').value = "Lat: " + e.latlng.lat.toFixed(4); 
-        });
     </script>
 </body>
 </html>
