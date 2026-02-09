@@ -3,51 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Vibras Positivas - MotoApp Caucasia</title>
+    <title>Vibras Positivas - Control Total</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
         html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
         body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; background: #f0f2f5; }
-        
-        #map { height: 65vh; width: 100%; position: relative; z-index: 1; }
-
-        .panel { 
-            height: 35vh; 
-            background: white; 
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.2); 
-            z-index: 1000; 
-            padding: 15px; 
-            box-sizing: border-box;
-            border-radius: 25px 25px 0 0;
-            overflow-y: auto;
-        }
-
+        #map { height: 60vh; width: 100%; position: relative; z-index: 1; }
+        .panel { height: 40vh; background: white; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); z-index: 1000; padding: 15px; border-radius: 25px 25px 0 0; overflow-y: auto; }
         input { width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #eee; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
         button { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; margin-bottom: 10px; }
-        
         .btn-yellow { background: #ffcc00; color: #000; }
         .btn-blue { background: #007bff; color: white; }
         .btn-admin { background: #343a40; color: white; font-size: 11px; }
         .btn-danger { background: #dc3545; color: white; }
         .btn-success { background: #28a745; color: white; }
-
-        .btn-call { 
-            display: none; 
-            background: #28a745; 
-            color: white; 
-            text-decoration: none; 
-            text-align: center; 
-            padding: 15px; 
-            border-radius: 12px; 
-            font-weight: bold; 
-            font-size: 18px; 
-            box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
-        }
-
         .hidden { display: none !important; }
-        .info-header { text-align: center; font-weight: bold; color: #2e7d32; margin-bottom: 5px; }
+        
+        /* Estilos de la tabla de suscripciones */
+        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .vencido { color: red; font-weight: bold; }
+        .activo { color: green; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -62,11 +41,10 @@
         </div>
 
         <div id="vista-pasajero" class="hidden">
-            <div class="info-header">TARIFA FIJA: $5.000 COP</div>
-            <input type="text" id="destino" placeholder="📍 Toca el mapa para el destino">
+            <input type="text" id="destino" placeholder="🏁 Toca el mapa para tu destino">
             <div id="nombre-conductor" style="text-align:center; font-size:14px; margin:5px; font-weight:bold;"></div>
-            <a id="btn-llamar" href="#" class="btn-call">📞 LLAMAR CONDUCTOR</a>
-            <button onclick="location.reload()" style="background:none; color:#007bff; font-size:12px;">Volver al Inicio</button>
+            <a id="btn-llamar" href="#" style="display:none; text-align:center; text-decoration:none; padding:15px; background:#28a745; color:white; border-radius:12px; font-weight:bold; font-size:18px;">📞 LLAMAR</a>
+            <button onclick="location.reload()" style="background:none; color:#007bff;">Volver</button>
         </div>
 
         <div id="vista-moto" class="hidden">
@@ -74,27 +52,34 @@
                 <input type="text" id="nom" placeholder="Tu Nombre">
                 <input type="text" id="tel" placeholder="Tu Celular">
                 <input type="text" id="pla" placeholder="Placa de la Moto">
-                <button id="btn-on" class="btn-blue" onclick="activarMoto()">1. CONECTARSE AL MAPA</button>
+                <button id="btn-on" class="btn-blue" onclick="activarMoto()">CONECTARSE</button>
             </div>
-            
             <div id="controles-estado" class="hidden">
-                <p style="text-align:center; font-weight:bold;">Estado en tiempo real:</p>
-                <button id="btn-status" class="btn-danger" onclick="cambiarEstado()">MARCAR COMO OCUPADO 🚩</button>
+                <button id="btn-status" class="btn-danger" onclick="cambiarEstado()">MARCAR OCUPADO 🚩</button>
             </div>
-            
-            <button onclick="location.reload()" style="background:none; color:#007bff; font-size:12px;">Cerrar Sesión</button>
+            <button onclick="location.reload()" style="background:none; color:#007bff;">Salir</button>
         </div>
 
         <div id="vista-admin" class="hidden">
-            <h4 style="margin:0 0 10px 0;">Activar Placa</h4>
+            <h4 style="margin:0;">Control de Suscripciones</h4>
             <input type="text" id="p-adm" placeholder="Placa a Activar">
             <button class="btn-yellow" onclick="autorizarPago()">ACTIVAR 30 DÍAS</button>
-            <button onclick="location.reload()" style="background:none; color:red;">Salir</button>
+            
+            <div id="historial-suscripciones">
+                <table>
+                    <thead>
+                        <tr><th>Placa</th><th>Vence en</th><th>Estado</th></tr>
+                    </thead>
+                    <tbody id="tabla-body"></tbody>
+                </table>
+            </div>
+            
+            <button onclick="limpiarConductores()" style="background:#ff4444; color:white; margin-top:15px; font-size:10px;">BORRAR CONEXIONES ACTUALES</button>
+            <button onclick="location.reload()" style="background:none; color:red;">Cerrar Admin</button>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -125,99 +110,92 @@
             document.getElementById(id).classList.remove('hidden');
         };
 
-        // --- PASAJERO ---
+        // PASAJERO
+        map.on('click', (e) => {
+            if (window.destMarker) map.removeLayer(window.destMarker);
+            window.destMarker = L.marker(e.latlng, { icon: L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png', iconSize: [25, 41] }) }).addTo(map);
+        });
+
         window.irPasajero = () => {
             mostrarSeccion('vista-pasajero');
-            escucharMotos();
-        };
-
-        function escucharMotos() {
             onValue(ref(db, 'conductores/'), (snap) => {
                 capaMotos.clearLayers();
                 const data = snap.val();
                 for (let id in data) {
                     const d = data[id];
-                    // SI ES OCUPADO -> RED, SI NO -> BLUE
-                    let colorActual = (d.estado === "ocupado") ? 'red' : 'blue';
-                    
-                    const marker = L.marker([d.lat, d.lng], {
-                        icon: L.icon({
-                            iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${colorActual}.png`,
-                            iconSize: [25, 41]
-                        })
-                    }).addTo(capaMotos);
-
-                    marker.on('click', () => {
-                        if(d.estado === "ocupado") {
-                            alert("Este mototaxista está ocupado. Elige uno de color azul.");
-                            document.getElementById('btn-llamar').style.display = "none";
-                            document.getElementById('nombre-conductor').innerText = d.nombre + " (OCUPADO 🚩)";
-                        } else {
+                    let color = d.estado === "ocupado" ? 'red' : 'blue';
+                    L.marker([d.lat, d.lng], { icon: L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`, iconSize: [25, 41] }) }).addTo(capaMotos).on('click', () => {
+                        if(d.estado === "disponible") {
                             document.getElementById('btn-llamar').href = "tel:" + d.telefono;
                             document.getElementById('btn-llamar').style.display = "block";
-                            document.getElementById('nombre-conductor').innerText = "🛺 " + d.nombre + " (Disponible)";
-                        }
+                            document.getElementById('nombre-conductor').innerText = "🛺 " + d.nombre;
+                        } else { alert("Moto ocupada"); }
                     });
+                }
+            });
+        };
+
+        // CONDUCTOR
+        window.activarMoto = async () => {
+            placaActual = document.getElementById('pla').value.toUpperCase();
+            const snap = await get(ref(db, 'usuarios_moto/' + placaActual));
+            if(snap.exists() && new Date() < new Date(snap.val().vencimiento)) {
+                navigator.geolocation.watchPosition(pos => {
+                    set(ref(db, 'conductores/' + placaActual), { nombre: document.getElementById('nom').value, telefono: document.getElementById('tel').value, lat: pos.coords.latitude, lng: pos.coords.longitude, estado: miEstado });
+                }, null, {enableHighAccuracy: true});
+                document.getElementById('form-registro').classList.add('hidden');
+                document.getElementById('controles-estado').classList.remove('hidden');
+            } else { alert("Suscripción inactiva"); }
+        };
+
+        window.cambiarEstado = () => {
+            miEstado = (miEstado === "disponible") ? "ocupado" : "disponible";
+            const btn = document.getElementById('btn-status');
+            btn.innerText = miEstado === "ocupado" ? "MARCAR DISPONIBLE ✅" : "MARCAR OCUPADO 🚩";
+            btn.className = miEstado === "ocupado" ? "btn-success" : "btn-danger";
+            set(ref(db, 'conductores/' + placaActual + '/estado'), miEstado);
+        };
+
+        // ADMIN E HISTORIAL
+        window.accesoAdmin = () => {
+            if(prompt("Clave:") === "1234") {
+                mostrarSeccion('vista-admin');
+                cargarHistorial();
+            }
+        };
+
+        function cargarHistorial() {
+            onValue(ref(db, 'usuarios_moto/'), (snap) => {
+                const body = document.getElementById('tabla-body');
+                body.innerHTML = "";
+                const data = snap.val();
+                for (let placa in data) {
+                    const fechaVence = new Date(data[placa].vencimiento);
+                    const hoy = new Date();
+                    const diffTime = fechaVence - hoy;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    let statusClass = diffDays > 0 ? "activo" : "vencido";
+                    let statusText = diffDays > 0 ? diffDays + " días" : "VENCIDO";
+                    
+                    body.innerHTML += `<tr><td>${placa}</td><td>${fechaVence.toLocaleDateString()}</td><td class="${statusClass}">${statusText}</td></tr>`;
                 }
             });
         }
 
-        map.on('click', (e) => {
-            if (window.destMarker) map.removeLayer(window.destMarker);
-            window.destMarker = L.marker(e.latlng, {
-                icon: L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', iconSize: [25, 41] })
-            }).addTo(map);
-            document.getElementById('destino').value = "Destino marcado";
-        });
-
-        // --- CONDUCTOR ---
-        window.activarMoto = async () => {
-            placaActual = document.getElementById('pla').value.toUpperCase();
-            if(!placaActual) return alert("Escribe tu placa");
-            
-            const snap = await get(ref(db, 'usuarios_moto/' + placaActual));
-            if(snap.exists() && new Date() < new Date(snap.val().vencimiento)) {
-                navigator.geolocation.watchPosition(pos => {
-                    enviarDatos(pos.coords.latitude, pos.coords.longitude);
-                }, null, {enableHighAccuracy: true});
-                
-                document.getElementById('form-registro').classList.add('hidden');
-                document.getElementById('controles-estado').classList.remove('hidden');
-            } else { alert("Placa no autorizada o vencida."); }
-        };
-
-        window.cambiarEstado = () => {
-            const btn = document.getElementById('btn-status');
-            if(miEstado === "disponible") {
-                miEstado = "ocupado";
-                btn.innerText = "MARCAR COMO DISPONIBLE ✅";
-                btn.className = "btn-success";
-            } else {
-                miEstado = "disponible";
-                btn.innerText = "MARCAR COMO OCUPADO 🚩";
-                btn.className = "btn-danger";
-            }
-            // Actualizar estado en Firebase inmediatamente
-            set(ref(db, 'conductores/' + placaActual + '/estado'), miEstado);
-        };
-
-        function enviarDatos(lat, lng) {
-            set(ref(db, 'conductores/' + placaActual), {
-                nombre: document.getElementById('nom').value,
-                telefono: document.getElementById('tel').value,
-                lat: lat,
-                lng: lng,
-                estado: miEstado
-            });
-        }
-
-        // --- ADMIN ---
-        window.accesoAdmin = () => { if(prompt("Clave:") === "1234") mostrarSeccion('vista-admin'); };
         window.autorizarPago = async () => {
             const p = document.getElementById('p-adm').value.toUpperCase();
+            if(!p) return;
             let f = new Date(); f.setDate(f.getDate() + 30);
             await set(ref(db, 'usuarios_moto/' + p), { vencimiento: f.toISOString() });
-            alert("Placa activada.");
+            alert("Placa " + p + " activada por 30 días.");
+        };
+
+        window.limpiarConductores = async () => {
+            if(confirm("¿Borrar todos los conductores del mapa?")) {
+                await set(ref(db, 'conductores/'), null);
+                location.reload();
+            }
         };
     </script>
 </body>
