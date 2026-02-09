@@ -1,188 +1,77 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MotoApp Caucasia - Vibras Positivas</title>
+<div id="vista-pasajero" class="hidden">
+    <div style="text-align:center; font-weight:bold; color:#2e7d32; margin-bottom:10px;">TARIFA ÚNICA: $5.000</div>
+    <input type="text" id="destino" placeholder="🏁 Toca el mapa o escribe tu destino">
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <style>
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; background: #f0f2f5; }
-        
-        /* El mapa DEBE tener una altura definida */
-        #map { flex-grow: 1; width: 100%; height: 100%; min-height: 300px; z-index: 1; }
-
-        .panel { padding: 20px; background: white; border-radius: 25px 25px 0 0; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); z-index: 1000; overflow-y: auto; max-height: 60%; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; margin-bottom: 10px; }
-        
-        .btn-yellow { background: #ffcc00; color: #000; }
-        .btn-blue { background: #007bff; color: white; }
-        .btn-admin { background: #343a40; color: white; }
-        .btn-green { background: #28a745; color: white; font-size: 12px; padding: 5px; }
-        
-        .hidden { display: none; }
-        .total-box { background: #d4edda; color: #155724; padding: 15px; border-radius: 10px; text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 15px; }
-        .alerta-vencimiento { background: #fff3cd; padding: 10px; border-radius: 8px; margin-bottom: 5px; font-size: 13px; border-left: 5px solid #ffc107; display: flex; justify-content: space-between; align-items: center; }
-    </style>
-</head>
-<body>
-
-    <div id="map"></div>
-
-    <div class="panel">
-        <div id="seleccion">
-            <button class="btn-yellow" onclick="irAPasajero()">PASAJERO ($5.000)</button>
-            <button class="btn-blue" onclick="mostrarSeccion('vista-moto')">CONDUCTOR</button>
-            <button class="btn-admin" onclick="accesoAdmin()">⚙️ PANEL ADMIN Y COBROS</button>
-        </div>
-
-        <div id="vista-pasajero" class="hidden">
-            <input type="text" id="destino" placeholder="🏁 Toca el mapa para el destino" readonly>
-            <a id="btn-llamar" href="#" class="btn-blue" style="text-decoration:none; display:none; text-align:center; line-height:30px;">📞 LLAMAR CONDUCTOR</a>
-            <button onclick="location.reload()">Volver</button>
-        </div>
-
-        <div id="vista-moto" class="hidden">
-            <input type="text" id="nombre-m" placeholder="Nombre">
-            <input type="text" id="tel-m" placeholder="Celular">
-            <input type="text" id="placa-m" placeholder="Placa">
-            <button id="btn-activar" class="btn-blue" onclick="validarSuscripcion()">ACTIVAR MOTO</button>
-            <button onclick="location.reload()">Volver</button>
-        </div>
-
-        <div id="vista-admin" class="hidden">
-            <div class="total-box">RECAUDO MES: <span id="total-dinero">$0</span></div>
-            <h4>⚠️ Por Vencer (3 días)</h4>
-            <div id="lista-alertas"></div>
-            <hr>
-            <h4>Registrar Pago $10.000</h4>
-            <input type="text" id="admin-placa" placeholder="Placa a Activar">
-            <button class="btn-yellow" onclick="registrarPago()">ACTIVAR 30 DÍAS</button>
-            <button onclick="location.reload()" style="background:none; color:red;">Cerrar Panel</button>
-        </div>
+    <div id="info-moto" style="text-align:center; margin:10px 0; font-size:14px; color:#555;">
+        Toca una moto azul para llamar
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <a id="btn-llamar" href="#" class="btn-blue" style="text-decoration:none; display:none; text-align:center; line-height:30px; background:#28a745;">📞 LLAMAR CONDUCTOR</a>
+    
+    <button class="btn-yellow" onclick="solicitarServicio()">SOLICITAR AHORA</button>
+    <button onclick="location.reload()">Volver</button>
+</div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, get, onValue, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+<script type="module">
+    // ... (Mantén tu configuración de Firebase igual)
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyC6Mcmm-TBrFuTiQ0IjIHq9XD620DNsI",
-            authDomain: "motoapp-e4261.firebaseapp.com",
-            databaseURL: "https://motoapp-e4261-default-rtdb.firebaseio.com",
-            projectId: "motoapp-e4261",
-            storageBucket: "motoapp-e4261.appspot.com",
-            messagingSenderId: "305221084261",
-            appId: "1:305221084261:web:a9569768a356396f9a063d"
-        };
+    // --- CORRECCIÓN DE LA LÓGICA DE DESTINO ---
+    // Esta función se asegura de que al tocar el mapa se escriba la dirección
+    map.on('click', function(e) {
+        // Obtenemos las coordenadas
+        const lat = e.latlng.lat.toFixed(5);
+        const lng = e.latlng.lng.toFixed(5);
+        
+        // Colocamos un marcador rojo en el destino
+        if (window.marcadorDestino) {
+            map.removeLayer(window.marcadorDestino);
+        }
+        window.marcadorDestino = L.marker(e.latlng, {
+            icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41]
+            })
+        }).addTo(map);
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        // Llenamos el campo de texto automáticamente
+        document.getElementById('destino').value = "Ubicación: " + lat + ", " + lng;
+        console.log("Destino marcado correctamente");
+    });
 
-        // --- INICIALIZACIÓN DEL MAPA ---
-        var map = L.map('map').setView([7.986, -75.193], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    window.solicitarServicio = () => {
+        const destino = document.getElementById('destino').value;
+        if(!destino) {
+            alert("Por favor, toca el mapa para indicar a dónde vas o escribe la dirección.");
+            return;
+        }
+        alert("¡Solicitud enviada! Toca la moto azul más cercana para llamar al conductor y confirmar.");
+    };
 
-        window.mostrarSeccion = (id) => {
-            document.querySelectorAll('.panel > div').forEach(div => div.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-        };
+    // --- REVISIÓN DE LAS MOTOS AZULES ---
+    function escucharMotos() {
+        onValue(ref(db, 'conductores/'), (snap) => {
+            const data = snap.val();
+            for(let id in data){
+                if(!motoMarkers[id]){
+                    motoMarkers[id] = L.marker([data[id].lat, data[id].lng], {
+                        icon: L.icon({
+                            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', 
+                            iconSize:[25,41]
+                        })
+                    }).addTo(map);
 
-        window.irAPasajero = () => {
-            mostrarSeccion('vista-pasajero');
-            escucharMotos();
-        };
-
-        window.accesoAdmin = () => {
-            if(prompt("Clave:") === "colina1234") {
-                mostrarSeccion('vista-admin');
-                cargarDatosAdmin();
+                    // Al hacer clic en la moto, activamos el botón de llamar
+                    motoMarkers[id].on('click', function() {
+                        document.getElementById('info-moto').innerHTML = "🛺 Conductor: <b>" + data[id].nombre + "</b>";
+                        const btnLlamar = document.getElementById('btn-llamar');
+                        btnLlamar.href = "tel:" + data[id].telefono;
+                        btnLlamar.style.display = "block";
+                    });
+                } else {
+                    motoMarkers[id].setLatLng([data[id].lat, data[id].lng]);
+                }
             }
-        };
-
-        async function cargarDatosAdmin() {
-            onValue(ref(db, 'historial_pagos/'), (snap) => {
-                let total = 0;
-                snap.forEach(p => total += p.val().monto);
-                document.getElementById('total-dinero').innerText = "$" + total.toLocaleString();
-            });
-
-            onValue(ref(db, 'usuarios_moto/'), (snap) => {
-                const contenedor = document.getElementById('lista-alertas');
-                contenedor.innerHTML = "";
-                const ahora = new Date();
-                const limite = new Date();
-                limite.setDate(ahora.getDate() + 3);
-
-                snap.forEach(child => {
-                    const u = child.val();
-                    const vence = new Date(u.fecha_vencimiento);
-                    if(vence > ahora && vence < limite) {
-                        contenedor.innerHTML += `<div class="alerta-vencimiento">
-                            <span>${child.key} (${vence.toLocaleDateString()})</span>
-                            <button class="btn-green" onclick="enviarRecordatorio('${u.telefono}', '${child.key}')">Recordar</button>
-                        </div>`;
-                    }
-                });
-            });
-        }
-
-        window.enviarRecordatorio = (tel, placa) => {
-            const msj = `Hola! Tu suscripción de MotoApp (${placa}) vence pronto. Paga tus $10.000 para seguir activo.`;
-            window.open(`https://wa.me/57${tel}?text=${encodeURIComponent(msj)}`);
-        };
-
-        window.registrarPago = async () => {
-            const placa = document.getElementById('admin-placa').value.toUpperCase();
-            const tel = prompt("Celular del conductor:");
-            let fecha = new Date();
-            fecha.setDate(fecha.getDate() + 30);
-
-            await set(ref(db, 'usuarios_moto/' + placa), {
-                fecha_vencimiento: fecha.toISOString(),
-                telefono: tel
-            });
-            await push(ref(db, 'historial_pagos/'), { placa, monto: 10000, fecha: new Date().toLocaleString() });
-            alert("Activado!");
-        };
-
-        window.validarSuscripcion = async () => {
-            const placa = document.getElementById('placa-m').value.toUpperCase();
-            const snap = await get(ref(db, 'usuarios_moto/' + placa));
-            if(snap.exists() && new Date() < new Date(snap.val().fecha_vencimiento)) {
-                navigator.geolocation.watchPosition(p => {
-                    set(ref(db, 'conductores/' + placa), {
-                        nombre: document.getElementById('nombre-m').value,
-                        telefono: document.getElementById('tel-m').value,
-                        lat: p.coords.latitude, lng: p.coords.longitude
-                    });
-                }, null, {enableHighAccuracy: true});
-                document.getElementById('btn-activar').innerText = "ONLINE ✅";
-                document.getElementById('btn-activar').style.background = "#28a745";
-            } else { alert("Suscripción vencida o no registrada."); }
-        };
-
-        function escucharMotos() {
-            onValue(ref(db, 'conductores/'), (snap) => {
-                snap.forEach(m => {
-                    const data = m.val();
-                    L.marker([data.lat, data.lng], {icon: L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', iconSize:[25,41]})})
-                    .addTo(map).on('click', () => {
-                        document.getElementById('btn-llamar').href = "tel:" + data.telefono;
-                        document.getElementById('btn-llamar').style.display = "block";
-                        alert("Moto: " + data.nombre + "\nTarifa: $5.000");
-                    });
-                });
-            });
-        }
-
-        map.on('click', (e) => {
-            document.getElementById('destino').value = "Marcado: " + e.latlng.lat.toFixed(4);
         });
-    </script>
-</body>
-</html>
+    }
+</script>
