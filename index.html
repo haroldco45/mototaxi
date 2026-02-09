@@ -3,130 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MotoApp Caucasia - GPS Real</title>
-    
+    <title>MotoApp Caucasia - Realtime</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
     <style>
-        body { margin: 0; display: flex; flex-direction: column; height: 100vh; font-family: 'Segoe UI', sans-serif; background: #f4f4f4; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; background: #f0f2f5; }
         #map { flex-grow: 1; width: 100%; }
-
-        .container { 
-            padding: 20px; 
-            background: white; 
-            border-radius: 25px 25px 0 0; 
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.15); 
-            z-index: 1000;
-        }
-
-        h2 { margin: 0 0 10px 0; font-size: 1.4rem; text-align: center; }
-
-        .input-group { margin-bottom: 10px; }
-
-        input { 
-            width: 100%; 
-            padding: 14px; 
-            margin: 6px 0; 
-            border: 1px solid #eee; 
-            border-radius: 12px; 
-            font-size: 1rem;
-            box-sizing: border-box;
-            background: #f9f9f9;
-        }
-
-        .price-info { 
-            text-align: center; 
-            margin: 10px 0; 
-            font-size: 1.1rem; 
-        }
-
-        .btn-request { 
-            width: 100%; 
-            padding: 18px; 
-            background: #ffcc00; /* Amarillo taxi de tus capturas */
-            border: none; 
-            border-radius: 15px; 
-            font-weight: bold; 
-            font-size: 1.1rem;
-            cursor: pointer;
-            text-transform: uppercase;
-        }
+        .panel { padding: 20px; background: white; border-radius: 25px 25px 0 0; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); z-index: 1000; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s; }
+        .btn-yellow { background: #ffcc00; color: #000; margin-bottom: 10px; }
+        .btn-blue { background: #007bff; color: #fff; }
+        .btn-green { background: #28a745; color: #fff; }
+        .hidden { display: none; }
+        .status { text-align: center; font-size: 14px; color: #666; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
     <div id="map"></div>
 
-    <div class="container">
-        <h2>¿A dónde vas hoy?</h2>
-        
-        <div class="input-group">
-            <input type="text" id="origen" placeholder="📍 Detectando tu ubicación..." readonly>
+    <div class="panel">
+        <div id="seleccion">
+            <button class="btn-yellow" onclick="irAPasajero()">PEDIR MOTOTAXI</button>
+            <button class="btn-blue" onclick="irAMoto()">SOY MOTOTAXISTA</button>
+        </div>
+
+        <div id="vista-pasajero" class="hidden">
             <input type="text" id="destino" placeholder="🏁 Toca el mapa para el destino" readonly>
+            <div class="status">Tarifa estimada: <strong id="tarifa">$ 5.000</strong></div>
+            <button class="btn-yellow" onclick="solicitar()">SOLICITAR AHORA</button>
+            <button onclick="regresar()" style="background:none; color:#007bff; margin-top:10px;">Volver</button>
         </div>
 
-        <div class="price-info">
-            Tarifa estimada: <strong id="tarifa">$ 5.000</strong>
+        <div id="vista-moto" class="hidden">
+            <input type="text" id="nombre-moto" placeholder="Tu Nombre">
+            <input type="text" id="placa-moto" placeholder="Placa de la Moto">
+            <button id="btn-activar" class="btn-green" onclick="activarMoto()">ACTIVAR DISPONIBILIDAD</button>
+            <button onclick="regresar()" style="background:none; color:#007bff; margin-top:10px;">Volver</button>
         </div>
-
-        <button class="btn-request" onclick="solicitar()">SOLICITAR MOTOTAXI</button>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <script>
-        // 1. Iniciar mapa (Caucasia por defecto si falla el GPS)
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // CONFIGURACIÓN EXTRAÍDA DE TU CAPTURA
+        const firebaseConfig = {
+            apiKey: "AIzaSyC6Mcmm-TBrFuTiQ0IjIHq9XD620DNsI",
+            authDomain: "motoapp-e4261.firebaseapp.com",
+            databaseURL: "https://motoapp-e4261-default-rtdb.firebaseio.com",
+            projectId: "motoapp-e4261",
+            storageBucket: "motoapp-e4261.appspot.com",
+            messagingSenderId: "305221084261",
+            appId: "1:305221084261:web:a9569768a356396f9a063d"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Inicializar Mapa en Caucasia
         var map = L.map('map').setView([7.986, -75.193], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
-
-        // Iconos personalizados
         var motoIcon = L.icon({
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
             iconSize: [25, 41], iconAnchor: [12, 41]
         });
 
-        var destinoIcon = L.icon({
+        var destIcon = L.icon({
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
             iconSize: [25, 41], iconAnchor: [12, 41]
         });
 
-        // 2. ACTIVAR GPS REAL
-        map.locate({setView: true, maxZoom: 16});
+        // FUNCIONES DE NAVEGACIÓN
+        window.irAPasajero = () => {
+            mostrarSeccion('vista-pasajero');
+            escucharMotos();
+        };
+        window.irAMoto = () => mostrarSeccion('vista-moto');
+        window.regresar = () => mostrarSeccion('seleccion');
 
-        function onLocationFound(e) {
-            L.marker(e.latlng).addTo(map).bindPopup("Estás aquí").openPopup();
-            document.getElementById('origen').value = "Mi ubicación detectada";
+        function mostrarSeccion(id) {
+            ['seleccion', 'vista-pasajero', 'vista-moto'].forEach(s => document.getElementById(s).classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
         }
-        map.on('locationfound', onLocationFound);
 
-        // 3. SELECCIONAR DESTINO TOCANDO EL MAPA
-        var marcadorDestino;
-        map.on('click', function(e) {
-            if (marcadorDestino) map.removeLayer(marcadorDestino);
-            
-            marcadorDestino = L.marker(e.latlng, {icon: destinoIcon}).addTo(map);
-            
-            // Llenar el cuadro de destino con coordenadas
-            document.getElementById('destino').value = "Destino: " + e.latlng.lat.toFixed(4) + ", " + e.latlng.lng.toFixed(4);
-            
-            // Cambiar precio simulado
+        // LÓGICA PASAJERO: VER MOTOS EN TIEMPO REAL
+        function escucharMotos() {
+            let markers = {};
+            onValue(ref(db, 'conductores/'), (snapshot) => {
+                const data = snapshot.val();
+                for (let id in data) {
+                    if (!markers[id]) {
+                        markers[id] = L.marker([data[id].lat, data[id].lng], {icon: motoIcon}).addTo(map)
+                            .bindPopup("Moto: " + data[id].nombre);
+                    } else {
+                        markers[id].setLatLng([data[id].lat, data[id].lng]);
+                    }
+                }
+            });
+        }
+
+        // LÓGICA MOTO: ENVIAR GPS A FIREBASE
+        window.activarMoto = () => {
+            const nombre = document.getElementById('nombre-moto').value;
+            const placa = document.getElementById('placa-moto').value;
+            if(!nombre || !placa) return alert("Ingresa tus datos");
+
+            navigator.geolocation.watchPosition((pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                
+                set(ref(db, 'conductores/' + placa), {
+                    nombre: nombre,
+                    lat: lat,
+                    lng: lng
+                });
+                map.setView([lat, lng], 16);
+            }, null, { enableHighAccuracy: true });
+
+            document.getElementById('btn-activar').innerText = "CONECTADO ✅";
+            document.getElementById('btn-activar').style.background = "#155724";
+        };
+
+        // SELECCIÓN DE DESTINO
+        var marcadorDest;
+        map.on('click', (e) => {
+            if (marcadorDest) map.removeLayer(marcadorDest);
+            marcadorDest = L.marker(e.latlng, {icon: destIcon}).addTo(map);
+            document.getElementById('destino').value = e.latlng.lat.toFixed(4) + ", " + e.latlng.lng.toFixed(4);
             document.getElementById('tarifa').innerText = "$ 6.500";
         });
 
-        // Simular una moto cerca
-        L.marker([7.988, -75.192], {icon: motoIcon}).addTo(map).bindPopup("Mototaxista disponible");
-
-        function solicitar() {
-            const dest = document.getElementById('destino').value;
-            if(!dest) {
-                alert("Primero toca el mapa para decirnos a dónde vas.");
-            } else {
-                alert("Buscando al mototaxista más cercano...");
-            }
-        }
+        window.solicitar = () => alert("Notificando a las motos cercanas en Caucasia...");
     </script>
 </body>
 </html>
