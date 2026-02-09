@@ -8,8 +8,9 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        /* Ajuste para evitar pantallas blancas o grises */
+        /* Ajuste total para evitar la pantalla blanca/gris */
         html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; }
         
         /* El mapa ocupa el 65% superior fijo */
         #map { height: 65vh; width: 100%; position: relative; z-index: 1; background: #eee; }
@@ -32,7 +33,6 @@
         .btn-blue { background: #007bff; color: white; }
         .btn-admin { background: #333; color: white; font-size: 12px; }
         .hidden { display: none !important; }
-        .info-txt { text-align: center; font-size: 14px; color: #2e7d32; font-weight: bold; margin-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -41,13 +41,13 @@
 
     <div class="panel">
         <div id="seleccion">
-            <button class="btn-yellow" onclick="activarPasajero()">PASAJERO ($5.000)</button>
+            <button class="btn-yellow" onclick="irPasajero()">PASAJERO ($5.000)</button>
             <button class="btn-blue" onclick="mostrarSeccion('vista-moto')">CONDUCTOR</button>
             <button class="btn-admin" onclick="accesoAdmin()">⚙️ PANEL ADMIN</button>
         </div>
 
         <div id="vista-pasajero" class="hidden">
-            <div class="info-txt">TARIFA FIJA: $5.000</div>
+            <div style="text-align:center; font-weight:bold; color:#2e7d32; margin-bottom:5px;">TARIFA FIJA: $5.000</div>
             <input type="text" id="destino" placeholder="🏁 Toca el mapa para el destino">
             <a id="btn-llamar" href="#" class="btn-blue" style="display:none; text-align:center; text-decoration:none; padding:12px; background:#28a745; border-radius:12px;">📞 LLAMAR CONDUCTOR</a>
             <button onclick="location.reload()" style="background:#eee; margin-top:10px;">Volver</button>
@@ -57,13 +57,13 @@
             <input type="text" id="nom" placeholder="Tu Nombre">
             <input type="text" id="tel" placeholder="Tu Celular">
             <input type="text" id="pla" placeholder="Placa">
-            <button id="btn-on" class="btn-blue" onclick="activarGPSConductor()">ACTIVAR DISPONIBILIDAD</button>
+            <button id="btn-on" class="btn-blue" onclick="activarMoto()">ACTIVAR DISPONIBILIDAD</button>
             <button onclick="location.reload()" style="background:#eee;">Volver</button>
         </div>
 
         <div id="vista-admin" class="hidden">
             <input type="text" id="p-adm" placeholder="Placa a Activar">
-            <button class="btn-yellow" onclick="autorizarPago()">ACTIVAR 30 DÍAS</button>
+            <button class="btn-yellow" onclick="autorizarPlaca()">ACTIVAR 30 DÍAS</button>
             <button onclick="location.reload()">Cerrar</button>
         </div>
     </div>
@@ -94,13 +94,12 @@
 
         window.mostrarSeccion = (id) => {
             document.getElementById('seleccion').classList.add('hidden');
-            document.querySelectorAll('.panel > div').forEach(d => d.classList.add('hidden'));
+            document.querySelectorAll('.panel > div:not(#seleccion)').forEach(d => d.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
         };
 
-        window.activarPasajero = () => {
+        window.irPasajero = () => {
             mostrarSeccion('vista-pasajero');
-            // Escuchar motos en tiempo real
             onValue(ref(db, 'conductores/'), (snap) => {
                 const data = snap.val();
                 for(let id in data){
@@ -118,14 +117,14 @@
 
         window.accesoAdmin = () => { if(prompt("Clave:") === "1234") mostrarSeccion('vista-admin'); };
 
-        window.autorizarPago = async () => {
+        window.autorizarPlaca = async () => {
             const p = document.getElementById('p-adm').value.toUpperCase();
             let f = new Date(); f.setDate(f.getDate() + 30);
             await set(ref(db, 'usuarios_moto/' + p), { vencimiento: f.toISOString() });
-            alert("Placa " + p + " activada!");
+            alert("Placa " + p + " activada por 30 días!");
         };
 
-        window.activarGPSConductor = async () => {
+        window.activarMoto = async () => {
             const p = document.getElementById('pla').value.toUpperCase();
             const snap = await get(ref(db, 'usuarios_moto/' + p));
             
@@ -136,14 +135,14 @@
                         telefono: document.getElementById('tel').value,
                         lat: pos.coords.latitude, lng: pos.coords.longitude
                     });
-                }, null, {enableHighAccuracy: true});
-                document.getElementById('btn-on').innerText = "CONECTADO ✅";
+                }, (err) => alert("GPS Error: " + err.message), {enableHighAccuracy: true});
+                document.getElementById('btn-on').innerText = "ONLINE ✅";
                 document.getElementById('btn-on').style.background = "#28a745";
-            } else { alert("Suscripción inactiva. Contacta al Admin."); }
+            } else { alert("Suscripción inactiva. El Admin debe autorizar la placa " + p + "."); }
         };
 
         map.on('click', e => { 
-            document.getElementById('destino').value = "Destino: " + e.latlng.lat.toFixed(4); 
+            document.getElementById('destino').value = "Lat: " + e.latlng.lat.toFixed(4); 
         });
     </script>
 </body>
