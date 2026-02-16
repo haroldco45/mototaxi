@@ -10,24 +10,53 @@
     
     <style>
         :root { --primary: #ffcc00; --secondary: #007bff; --success: #28a745; --danger: #dc3545; }
-        body { font-family: 'Poppins', sans-serif; margin: 0; background: #f8f9fa; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
-        #map { height: 60vh; width: 100%; z-index: 1; }
-        .panel { height: 40vh; background: white; z-index: 1000; padding: 15px; box-sizing: border-box; border-radius: 25px 25px 0 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); overflow-y: auto; }
+        
+        /* Ajuste para evitar que el teclado tape todo en móvil */
+        body { font-family: 'Poppins', sans-serif; margin: 0; background: #f8f9fa; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        #map { flex-grow: 1; width: 100%; z-index: 1; min-height: 50vh; }
+
+        .panel { 
+            height: auto; max-height: 50vh; background: white; z-index: 1000; padding: 15px; 
+            box-sizing: border-box; border-radius: 25px 25px 0 0; 
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1); overflow-y: auto;
+            display: flex; flex-direction: column;
+        }
+
         h2 { margin: 0 0 10px 0; font-size: 18px; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
-        button { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; margin-bottom: 8px; font-family: inherit; }
+        input { width: 100%; padding: 10px; margin: 5px 0; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
+        
+        /* Botones responsivos */
+        button { width: 100%; padding: 12px; border: none; border-radius: 12px; font-weight: bold; font-size: 15px; cursor: pointer; margin-bottom: 8px; font-family: inherit; }
+        
         .btn-yellow { background: var(--primary); color: #000; }
         .btn-blue { background: var(--secondary); color: white; }
-        .btn-admin { background: #343a40; color: white; font-size: 11px; margin-top: 10px; width: 100%; }
-        .btn-outline { background: #f1f3f5; border: 1px solid #ddd; color: #444; font-size: 14px; width: 100%; }
-        .table-container { margin-top: 15px; border: 1px solid #eee; border-radius: 10px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
+        .btn-admin { background: #343a40; color: white; font-size: 11px; margin-top: 5px; }
+        
+        /* Botón Volver más compacto para móvil */
+        .btn-outline { 
+            background: #f1f3f5; border: 1px solid #ddd; color: #444; 
+            font-size: 13px; margin-top: 5px; padding: 8px; 
+        }
+
+        .table-container { margin-top: 10px; border: 1px solid #eee; border-radius: 10px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #eee; }
+        
         .vencido { color: var(--danger); font-weight: bold; }
         .activo { color: var(--success); font-weight: bold; }
-        .btn-del { background: none; color: var(--danger); border: none; font-size: 16px; cursor: pointer; width: auto; padding: 0; }
-        .btn-call { display: none; background: var(--success); color: white; text-decoration: none; text-align: center; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 18px; margin: 10px 0; }
+        .btn-del { background: none; color: var(--danger); border: none; font-size: 16px; cursor: pointer; padding: 0; width: auto; }
+        
+        .btn-call { display: none; background: var(--success); color: white; text-decoration: none; text-align: center; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 16px; margin: 10px 0; }
+        
         .hidden { display: none !important; }
+
+        /* Ajuste específico para pantallas muy pequeñas */
+        @media (max-height: 600px) {
+            .panel { max-height: 60vh; }
+            h2 { font-size: 16px; }
+            button { padding: 10px; font-size: 14px; }
+        }
     </style>
 </head>
 <body>
@@ -37,8 +66,8 @@
     <div class="panel">
         <div id="view-start">
             <h2 style="color: var(--secondary);">Vibras Positivas 🛺</h2>
-            <button class="btn-yellow" onclick="goPassenger()" style="width:100%">PEDIR MOTO ($5.000)</button>
-            <button class="btn-blue" onclick="showView('view-driver')" style="width:100%">MODO CONDUCTOR</button>
+            <button class="btn-yellow" onclick="goPassenger()">PEDIR MOTO ($5.000)</button>
+            <button class="btn-blue" onclick="showView('view-driver')">MODO CONDUCTOR</button>
             <button class="btn-admin" onclick="accessAdmin()">⚙️ CONFIGURACIÓN ADMIN</button>
         </div>
 
@@ -56,28 +85,28 @@
                 <input type="text" id="d-name" placeholder="Tu Nombre">
                 <input type="text" id="d-tel" placeholder="Tu WhatsApp">
                 <input type="text" id="d-plate" placeholder="Placa de la Moto">
-                <button class="btn-blue" style="width:100%" onclick="startTracking()">CONECTARSE AL MAPA</button>
+                <button class="btn-blue" onclick="startTracking()">CONECTARSE AL MAPA</button>
             </div>
             <div id="driver-online" class="hidden">
                 <h2 style="color: var(--success);">¡Estás en Línea! ✅</h2>
-                <button id="btn-status" class="btn-yellow" style="width:100%" onclick="toggleStatus()">MARCAR COMO OCUPADO</button>
-                <button class="btn-outline" onclick="location.reload()" style="background:var(--danger); color:white;">DESCONECTARSE</button>
+                <button id="btn-status" class="btn-yellow" onclick="toggleStatus()">MARCAR COMO OCUPADO</button>
+                <button class="btn-outline" onclick="location.reload()" style="background:var(--danger); color:white; border:none;">DESCONECTARSE</button>
             </div>
-            <button class="btn-outline" onclick="showView('view-start')" style="margin-top:10px;">🔙 VOLVER AL INICIO</button>
+            <button class="btn-outline" onclick="showView('view-start')">🔙 VOLVER AL INICIO</button>
         </div>
 
         <div id="view-admin" class="hidden">
             <h2>Control de Suscripciones</h2>
-            <input type="text" id="a-plate" placeholder="Escribir Placa a Activar">
-            <button class="btn-yellow" style="width:100%" onclick="activatePlate()">ACTIVAR 30 DÍAS</button>
+            <input type="text" id="a-plate" placeholder="Placa a Activar">
+            <button class="btn-yellow" onclick="activatePlate()">ACTIVAR 30 DÍAS</button>
             <div class="table-container">
                 <table>
                     <thead><tr><th>Placa</th><th>Vence</th><th>Estado</th><th>Acción</th></tr></thead>
                     <tbody id="admin-table-body"></tbody>
                 </table>
             </div>
-            <button onclick="clearMap()" style="background:var(--danger); color:white; margin-top:15px; font-size:10px; width:100%">BORRAR CONEXIONES DEL MAPA</button>
-            <button class="btn-outline" onclick="showView('view-start')" style="margin-top:10px;">🔙 VOLVER AL INICIO</button>
+            <button onclick="clearMap()" style="background:var(--danger); color:white; margin-top:10px; font-size:10px;">LIMPIAR MAPA</button>
+            <button class="btn-outline" onclick="showView('view-start')">🔙 VOLVER AL INICIO</button>
         </div>
     </div>
 
@@ -100,10 +129,12 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        // Mapa centrado en Caucasia
         var map = L.map('map', { zoomControl: false }).setView([7.986, -75.193], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         var motoLayer = L.layerGroup().addTo(map);
 
+        // Cargar datos de localStorage
         window.onload = () => {
             if(localStorage.getItem('d-name')) document.getElementById('d-name').value = localStorage.getItem('d-name');
             if(localStorage.getItem('d-tel')) document.getElementById('d-tel').value = localStorage.getItem('d-tel');
@@ -113,6 +144,8 @@
         window.showView = (id) => {
             document.querySelectorAll('.panel > div').forEach(div => div.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
+            // Al cambiar de vista, aseguramos scroll arriba en el panel
+            document.querySelector('.panel').scrollTop = 0;
         };
 
         window.goPassenger = () => {
@@ -151,9 +184,11 @@
             const tel = document.getElementById('d-tel').value.trim();
             myPlate = document.getElementById('d-plate').value.toUpperCase().trim();
             if(!name || !tel || !myPlate) return alert("Completa los datos");
+            
             localStorage.setItem('d-name', name);
             localStorage.setItem('d-tel', tel);
             localStorage.setItem('d-plate', myPlate);
+
             const snap = await get(ref(db, 'usuarios_moto/' + myPlate));
             if(snap.exists() && new Date() < new Date(snap.val().vencimiento)) {
                 navigator.geolocation.watchPosition(p => {
@@ -198,7 +233,7 @@
                     const hoy = new Date();
                     const dias = Math.ceil((vence - hoy) / (1000 * 60 * 60 * 24));
                     const estadoClase = dias > 0 ? "activo" : "vencido";
-                    const estadoTexto = dias > 0 ? dias + " días" : "VENCIDO";
+                    const estadoTexto = dias > 0 ? dias + " d" : "VENC";
                     tableBody.innerHTML += `<tr><td>${placa}</td><td>${vence.toLocaleDateString()}</td><td class="${estadoClase}">${estadoTexto}</td><td><button class="btn-del" onclick="deletePlate('${placa}')">🗑️</button></td></tr>`;
                 }
             });
