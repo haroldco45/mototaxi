@@ -11,16 +11,14 @@
     <style>
         :root { --primary: #ffcc00; --secondary: #007bff; --success: #28a745; --danger: #dc3545; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-        
         body { font-family: 'Poppins', sans-serif; height: 100vh; background: #f0f0f0; overflow: hidden; position: relative; }
-        
         #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; background: #e5e3df; }
 
         .btn-admin-top { 
             position: absolute; top: 15px; right: 15px; z-index: 2000;
-            background: rgba(255, 255, 255, 0.9); color: #333; border: 1px solid #ddd;
-            padding: 10px; border-radius: 50%; font-size: 20px; width: 45px; height: 45px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            background: rgba(255, 255, 255, 0.9); border: 1px solid #ddd;
+            width: 45px; height: 45px; border-radius: 50%; font-size: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2); cursor: pointer;
         }
 
         .panel { 
@@ -31,9 +29,8 @@
         }
 
         .handle { width: 50px; height: 6px; background: #ddd; border-radius: 10px; margin: 0 auto 15px auto; }
-
         h2 { font-size: 1.1rem; text-align: center; margin-bottom: 10px; color: #333; }
-        input { width: 100%; padding: 12px; margin: 5px 0; border: 2px solid #eee; border-radius: 12px; font-size: 16px; outline: none; font-family: inherit; }
+        input { width: 100%; padding: 12px; margin: 5px 0; border: 2px solid #eee; border-radius: 12px; font-size: 16px; outline: none; }
         
         button { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; }
         
@@ -41,19 +38,17 @@
         .btn-blue { background: var(--secondary); color: white; }
         .btn-ws { background: #25d366; color: white; }
         .btn-back { background: #444; color: white; margin-top: 5px; }
-        .btn-success { background: var(--success); color: white; }
+        .btn-disabled { background: #ccc !important; color: #666 !important; cursor: not-allowed; }
 
         .table-container { width: 100%; margin-top: 10px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
-
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
     <button class="btn-admin-top" onclick="accessAdmin()">⚙️</button>
-
     <div id="map"></div>
 
     <div class="panel" id="main-panel">
@@ -67,13 +62,13 @@
 
         <div id="view-passenger" class="hidden">
             <h2>Buscar Placa</h2>
-            <input type="text" id="search-plate" style="border: 2px solid var(--primary); text-align:center;" placeholder="PLACA (EJ: ABC12D)" oninput="searchMoto()">
+            <input type="text" id="search-plate" style="border: 2px solid var(--primary); text-align:center;" placeholder="EJ: EWQ87F" oninput="searchMoto()">
             <input type="text" id="dest-input" placeholder="🏁 Destino (Toca el mapa)" readonly>
             
             <div id="driver-selection" class="hidden" style="background: #f1f8ff; padding: 12px; border-radius: 15px; margin: 10px 0;">
                 <p id="driver-info" style="text-align: center; font-weight: 600; margin-bottom: 10px;"></p>
-                <button class="btn-ws" onclick="requestMoto()">📩 PEDIR POR WHATSAPP</button>
-                <button class="btn-blue" id="btn-call-direct" style="background: #333;">📞 LLAMAR</button>
+                <button id="btn-request-ws" class="btn-ws" onclick="requestMoto()">📩 PEDIR POR WHATSAPP</button>
+                <button id="btn-call-direct" class="btn-blue" style="background: #333;">📞 LLAMAR</button>
             </div>
             <button class="btn-back" onclick="location.reload()">🔙 VOLVER</button>
         </div>
@@ -162,7 +157,6 @@
                     const icon = L.icon({ iconUrl, iconSize: [25, 41], iconAnchor: [12, 41] });
                     L.marker([d.lat, d.lng], { icon }).addTo(motoLayer).on('click', () => {
                         selectFromMap(d, child.key);
-                        document.getElementById('main-panel').style.height = '80vh';
                     });
                 });
             });
@@ -170,22 +164,42 @@
 
         function selectFromMap(d, plate) {
             selectedDriver = { ...d, placa: plate };
-            document.getElementById('driver-selection').classList.remove('hidden');
-            document.getElementById('driver-info').innerHTML = `🛺 ${d.nombre} (${plate})`;
-            document.getElementById('btn-call-direct').onclick = () => window.open("tel:" + d.telefono);
+            const panel = document.getElementById('main-panel');
+            const selectionDiv = document.getElementById('driver-selection');
+            const infoP = document.getElementById('driver-info');
+            const btnWs = document.getElementById('btn-request-ws');
+            const btnCall = document.getElementById('btn-call-direct');
+
+            selectionDiv.classList.remove('hidden');
+            panel.style.height = '80vh'; // Subir el panel para ver opciones
+
+            if(d.estado === 'ocupado') {
+                infoP.innerHTML = `<span style="color:red;">🔴 CONDUCTOR OCUPADO (${plate})</span>`;
+                btnWs.innerText = "CONDUCTOR OCUPADO";
+                btnWs.className = "btn-disabled";
+                btnWs.disabled = true;
+                btnCall.classList.add('hidden');
+            } else {
+                infoP.innerHTML = `<span style="color:green;">🔵 ${d.nombre} (${plate})</span>`;
+                btnWs.innerText = "📩 PEDIR POR WHATSAPP";
+                btnWs.className = "btn-ws";
+                btnWs.disabled = false;
+                btnCall.classList.remove('hidden');
+                btnCall.onclick = () => window.open("tel:" + d.telefono);
+            }
         }
 
         window.searchMoto = () => {
             const plate = document.getElementById('search-plate').value.toUpperCase().trim();
             if(driversData[plate]) {
                 const d = driversData[plate];
-                map.flyTo([d.lat, d.lng], 17);
-                selectFromMap(d, plate);
+                map.flyTo([d.lat, d.lng], 18); // Vuelo rápido al conductor
+                selectFromMap(d, plate); // Mostrar opciones automáticamente
             }
         };
 
         window.requestMoto = () => {
-            if(!selectedDriver) return;
+            if(!selectedDriver || selectedDriver.estado === 'ocupado') return;
             const dest = document.getElementById('dest-input').value;
             const msg = `Hola ${selectedDriver.nombre}, soy de Vibras Positivas. Mi ubicación: https://www.google.com/maps?q=${passengerPos[0]},${passengerPos[1]} Destino: ${dest || 'Por definir'}`;
             window.open(`https://wa.me/57${selectedDriver.telefono}?text=${encodeURIComponent(msg)}`);
@@ -199,6 +213,7 @@
             }
         });
 
+        // --- LÓGICA DE CONDUCTOR ---
         window.startTracking = async () => {
             myPlate = document.getElementById('d-plate').value.toUpperCase().trim();
             const snap = await get(ref(db, 'usuarios_moto/' + myPlate));
@@ -213,30 +228,16 @@
                 }, null, { enableHighAccuracy: true });
                 document.getElementById('driver-reg').classList.add('hidden');
                 document.getElementById('driver-online').classList.remove('hidden');
-                
-                // Guardar en local
-                localStorage.setItem('d-name', document.getElementById('d-name').value);
-                localStorage.setItem('d-tel', document.getElementById('d-tel').value);
                 localStorage.setItem('d-plate', myPlate);
             } else { alert("Suscripción inactiva."); }
         };
 
-        // --- FUNCIÓN DE CAMBIO DE ESTADO (FIXED) ---
         window.toggleStatus = () => {
             myStatus = (myStatus === 'disponible') ? 'ocupado' : 'disponible';
-            
             const btn = document.getElementById('btn-status');
-            if(myStatus === 'ocupado') {
-                btn.innerText = "MARCAR COMO DISPONIBLE";
-                btn.className = "btn-success";
-            } else {
-                btn.innerText = "MARCAR COMO OCUPADO";
-                btn.className = "btn-yellow";
-            }
-
-            if(myPlate) {
-                update(ref(db, 'conductores/' + myPlate), { estado: myStatus });
-            }
+            btn.innerText = (myStatus === 'ocupado') ? "MARCAR COMO DISPONIBLE" : "MARCAR COMO OCUPADO";
+            btn.className = (myStatus === 'ocupado') ? "btn-success" : "btn-yellow";
+            if(myPlate) update(ref(db, 'conductores/' + myPlate), { estado: myStatus });
         };
 
         window.accessAdmin = () => { if(prompt("Clave:") === "vp1965") { showView('view-admin'); cargarHistorial(); document.getElementById('main-panel').style.height = '80vh'; } };
@@ -251,12 +252,11 @@
             onValue(ref(db, 'usuarios_moto/'), (snap) => {
                 const tableBody = document.getElementById('admin-table-body');
                 tableBody.innerHTML = "";
-                const data = snap.val();
-                if(!data) return;
-                for (let plate in data) {
-                    const dias = Math.ceil((new Date(data[plate].vencimiento) - new Date()) / (1000 * 60 * 60 * 24));
+                snap.forEach(child => {
+                    const plate = child.key;
+                    const dias = Math.ceil((new Date(child.val().vencimiento) - new Date()) / (1000 * 60 * 60 * 24));
                     tableBody.innerHTML += `<tr><td>${plate}</td><td>${dias}d</td><td><button style="width:auto; padding:5px; background:none; color:red;" onclick="eliminarPlaca('${plate}')">🗑️</button></td></tr>`;
-                }
+                });
             });
         }
         window.eliminarPlaca = async (p) => { if(confirm("¿Borrar?")) { await remove(ref(db, 'usuarios_moto/' + p)); await remove(ref(db, 'conductores/' + p)); } };
