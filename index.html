@@ -9,104 +9,161 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     
     <style>
-        :root { --primary: #ffcc00; --secondary: #007bff; --success: #28a745; --danger: #dc3545; }
+        :root { --primary: #ffcc00; --secondary: #007bff; --success: #28a745; --danger: #dc3545; --gray: #f4f4f4; }
         
-        /* Ajuste para evitar que el teclado tape todo en móvil */
-        body { font-family: 'Poppins', sans-serif; margin: 0; background: #f8f9fa; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        
-        #map { flex-grow: 1; width: 100%; z-index: 1; min-height: 50vh; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            margin: 0; 
+            background: #000; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
+        
+        /* El mapa ocupa el fondo o la mitad superior */
+        #map { flex: 1; width: 100%; z-index: 1; }
+
+        /* Panel ajustable para móvil */
         .panel { 
-            height: auto; max-height: 50vh; background: white; z-index: 1000; padding: 15px; 
-            box-sizing: border-box; border-radius: 25px 25px 0 0; 
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.1); overflow-y: auto;
-            display: flex; flex-direction: column;
+            position: relative;
+            background: white; 
+            z-index: 1000; 
+            padding: 20px; 
+            border-radius: 25px 25px 0 0; 
+            box-shadow: 0 -5px 25px rgba(0,0,0,0.2);
+            max-height: 50vh; 
+            overflow-y: auto;
+            transition: all 0.3s ease;
         }
 
-        h2 { margin: 0 0 10px 0; font-size: 18px; text-align: center; }
-        input { width: 100%; padding: 10px; margin: 5px 0; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
+        h2 { margin: 0 0 15px 0; font-size: 1.2rem; text-align: center; color: var(--dark); }
         
-        /* Botones responsivos */
-        button { width: 100%; padding: 12px; border: none; border-radius: 12px; font-weight: bold; font-size: 15px; cursor: pointer; margin-bottom: 8px; font-family: inherit; }
+        input { 
+            width: 100%; 
+            padding: 14px; 
+            margin: 8px 0; 
+            border: 2px solid var(--gray); 
+            border-radius: 12px; 
+            font-size: 16px; /* Evita zoom automático en iPhone */
+            font-family: inherit;
+            outline: none;
+        }
+
+        input:focus { border-color: var(--secondary); }
+
+        button { 
+            width: 100%; 
+            padding: 15px; 
+            border: none; 
+            border-radius: 12px; 
+            font-weight: 600; 
+            font-size: 16px; 
+            cursor: pointer; 
+            margin-bottom: 10px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
         
         .btn-yellow { background: var(--primary); color: #000; }
         .btn-blue { background: var(--secondary); color: white; }
-        .btn-admin { background: #343a40; color: white; font-size: 11px; margin-top: 5px; }
+        .btn-admin { background: #333; color: white; font-size: 12px; margin-top: 10px; opacity: 0.8; }
         
-        /* Botón Volver más compacto para móvil */
-        .btn-outline { 
-            background: #f1f3f5; border: 1px solid #ddd; color: #444; 
-            font-size: 13px; margin-top: 5px; padding: 8px; 
+        /* Botón Volver Estilo "Atrás" */
+        .btn-back { 
+            background: var(--gray); 
+            color: #555; 
+            border: 1px solid #ddd;
+            margin-top: 5px;
         }
 
-        .table-container { margin-top: 10px; border: 1px solid #eee; border-radius: 10px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #eee; }
+        /* Tabla responsiva para celular */
+        .table-container { 
+            width: 100%; 
+            margin-top: 15px; 
+            overflow-x: auto; 
+            border: 1px solid #eee; 
+            border-radius: 12px;
+        }
         
-        .vencido { color: var(--danger); font-weight: bold; }
-        .activo { color: var(--success); font-weight: bold; }
-        .btn-del { background: none; color: var(--danger); border: none; font-size: 16px; cursor: pointer; padding: 0; width: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #fafafa; font-weight: 600; }
         
-        .btn-call { display: none; background: var(--success); color: white; text-decoration: none; text-align: center; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 16px; margin: 10px 0; }
-        
+        .vencido { color: var(--danger); }
+        .activo { color: var(--success); }
+
+        .btn-call { 
+            background: var(--success); 
+            color: white; 
+            text-decoration: none; 
+            padding: 15px; 
+            border-radius: 12px; 
+            text-align: center; 
+            font-weight: bold; 
+            display: block; 
+            margin-bottom: 10px;
+        }
+
         .hidden { display: none !important; }
 
-        /* Ajuste específico para pantallas muy pequeñas */
-        @media (max-height: 600px) {
-            .panel { max-height: 60vh; }
-            h2 { font-size: 16px; }
-            button { padding: 10px; font-size: 14px; }
-        }
+        /* Scrollbar estética para el panel */
+        .panel::-webkit-scrollbar { width: 5px; }
+        .panel::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
     </style>
 </head>
 <body>
 
     <div id="map"></div>
 
-    <div class="panel">
+    <div class="panel" id="main-panel">
         <div id="view-start">
             <h2 style="color: var(--secondary);">Vibras Positivas 🛺</h2>
-            <button class="btn-yellow" onclick="goPassenger()">PEDIR MOTO ($5.000)</button>
-            <button class="btn-blue" onclick="showView('view-driver')">MODO CONDUCTOR</button>
-            <button class="btn-admin" onclick="accessAdmin()">⚙️ CONFIGURACIÓN ADMIN</button>
+            <button class="btn-yellow" onclick="goPassenger()">📍 PEDIR MOTO ($5.000)</button>
+            <button class="btn-blue" onclick="showView('view-driver')">🛺 MODO CONDUCTOR</button>
+            <button class="btn-admin" onclick="accessAdmin()">⚙️ ADMIN</button>
         </div>
 
         <div id="view-passenger" class="hidden">
-            <h2>Mapa de Motos</h2>
-            <input type="text" id="dest-input" placeholder="🏁 Toca el mapa para tu destino" readonly>
-            <div id="driver-name" style="text-align:center; font-weight:600; margin:5px; color: var(--secondary);"></div>
-            <a id="btn-call" href="#" class="btn-call">📞 LLAMAR CONDUCTOR</a>
-            <button class="btn-outline" onclick="showView('view-start')">🔙 VOLVER AL INICIO</button>
+            <h2>Motos en Caucasia</h2>
+            <input type="text" id="dest-input" placeholder="¿A dónde vas? (Toca el mapa)" readonly>
+            <div id="driver-info" style="margin-bottom: 10px; text-align: center; font-weight: 600;"></div>
+            <a id="btn-call" href="#" class="btn-call" style="display:none;">📞 LLAMAR CONDUCTOR</a>
+            <button class="btn-back" onclick="location.reload()">🔙 VOLVER AL INICIO</button>
         </div>
 
         <div id="view-driver" class="hidden">
             <div id="driver-reg">
-                <h2>Registro Conductor</h2>
+                <h2>Registro de Conductor</h2>
                 <input type="text" id="d-name" placeholder="Tu Nombre">
-                <input type="text" id="d-tel" placeholder="Tu WhatsApp">
+                <input type="text" id="d-tel" placeholder="WhatsApp (Sin espacios)">
                 <input type="text" id="d-plate" placeholder="Placa de la Moto">
-                <button class="btn-blue" onclick="startTracking()">CONECTARSE AL MAPA</button>
+                <button class="btn-blue" onclick="startTracking()">🚀 CONECTARSE</button>
             </div>
             <div id="driver-online" class="hidden">
-                <h2 style="color: var(--success);">¡Estás en Línea! ✅</h2>
-                <button id="btn-status" class="btn-yellow" onclick="toggleStatus()">MARCAR COMO OCUPADO</button>
-                <button class="btn-outline" onclick="location.reload()" style="background:var(--danger); color:white; border:none;">DESCONECTARSE</button>
+                <h2 style="color: var(--success);">ESTÁS EN LÍNEA ✅</h2>
+                <button id="btn-status" class="btn-yellow" onclick="toggleStatus()">MARCAR OCUPADO</button>
+                <button class="btn-blue" style="background:#666" onclick="location.reload()">DESCONECTARSE</button>
             </div>
-            <button class="btn-outline" onclick="showView('view-start')">🔙 VOLVER AL INICIO</button>
+            <button class="btn-back" onclick="showView('view-start')">🔙 VOLVER AL INICIO</button>
         </div>
 
         <div id="view-admin" class="hidden">
-            <h2>Control de Suscripciones</h2>
-            <input type="text" id="a-plate" placeholder="Placa a Activar">
+            <h2>Gestión de Placas</h2>
+            <input type="text" id="a-plate" placeholder="Nueva Placa">
             <button class="btn-yellow" onclick="activatePlate()">ACTIVAR 30 DÍAS</button>
+            
             <div class="table-container">
                 <table>
-                    <thead><tr><th>Placa</th><th>Vence</th><th>Estado</th><th>Acción</th></tr></thead>
+                    <thead><tr><th>Placa</th><th>Días</th><th></th></tr></thead>
                     <tbody id="admin-table-body"></tbody>
                 </table>
             </div>
-            <button onclick="clearMap()" style="background:var(--danger); color:white; margin-top:10px; font-size:10px;">LIMPIAR MAPA</button>
-            <button class="btn-outline" onclick="showView('view-start')">🔙 VOLVER AL INICIO</button>
+            <button class="btn-back" onclick="showView('view-start')" style="margin-top:15px;">🔙 VOLVER</button>
         </div>
     </div>
 
@@ -129,12 +186,10 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Mapa centrado en Caucasia
         var map = L.map('map', { zoomControl: false }).setView([7.986, -75.193], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         var motoLayer = L.layerGroup().addTo(map);
 
-        // Cargar datos de localStorage
         window.onload = () => {
             if(localStorage.getItem('d-name')) document.getElementById('d-name').value = localStorage.getItem('d-name');
             if(localStorage.getItem('d-tel')) document.getElementById('d-tel').value = localStorage.getItem('d-tel');
@@ -144,8 +199,7 @@
         window.showView = (id) => {
             document.querySelectorAll('.panel > div').forEach(div => div.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
-            // Al cambiar de vista, aseguramos scroll arriba en el panel
-            document.querySelector('.panel').scrollTop = 0;
+            document.getElementById('main-panel').scrollTop = 0;
         };
 
         window.goPassenger = () => {
@@ -162,8 +216,8 @@
                         if(d.estado === 'disponible') {
                             document.getElementById('btn-call').href = "tel:" + d.telefono;
                             document.getElementById('btn-call').style.display = 'block';
-                            document.getElementById('driver-name').innerText = "🛺 Conductor: " + d.nombre;
-                        } else { alert("Moto ocupada actualmente"); }
+                            document.getElementById('driver-info').innerText = "🛺 " + d.nombre;
+                        } else { alert("Conductor ocupado"); }
                     });
                 });
             });
@@ -196,57 +250,50 @@
                 }, null, { enableHighAccuracy: true });
                 document.getElementById('driver-reg').classList.add('hidden');
                 document.getElementById('driver-online').classList.remove('hidden');
-            } else { alert("Suscripción inactiva."); }
+            } else { alert("Suscripción inactiva. Contacta al Admin."); }
         };
 
         window.toggleStatus = () => {
             myStatus = myStatus === 'disponible' ? 'ocupado' : 'disponible';
-            document.getElementById('btn-status').innerText = myStatus === 'disponible' ? 'MARCAR COMO OCUPADO' : 'MARCAR COMO DISPONIBLE';
-            document.getElementById('btn-status').className = myStatus === 'disponible' ? 'btn-yellow' : 'btn-success';
+            document.getElementById('btn-status').innerText = myStatus === 'disponible' ? 'MARCAR OCUPADO' : 'MARCAR DISPONIBLE';
+            document.getElementById('btn-status').className = myStatus === 'disponible' ? 'btn-yellow' : 'btn-blue';
             set(ref(db, 'conductores/' + myPlate + '/estado'), myStatus);
         };
 
         window.accessAdmin = () => {
-            const pass = prompt("Clave de Administrador:");
+            const pass = prompt("Clave Admin:");
             if(pass === "vp1965") { showView('view-admin'); cargarHistorial(); }
-            else { alert("Clave incorrecta"); }
+            else { alert("Error"); }
         };
 
         window.activatePlate = async () => {
             const p = document.getElementById('a-plate').value.toUpperCase().trim();
-            if(!p) return alert("Escribe la placa");
+            if(!p) return;
             let f = new Date(); f.setDate(f.getDate() + 30);
             await set(ref(db, 'usuarios_moto/' + p), { vencimiento: f.toISOString() });
-            alert("✅ Placa " + p + " activada.");
             document.getElementById('a-plate').value = "";
         };
 
         function cargarHistorial() {
             onValue(ref(db, 'usuarios_moto/'), (snap) => {
                 const tableBody = document.getElementById('admin-table-body');
-                if(!tableBody) return;
                 tableBody.innerHTML = "";
                 const data = snap.val();
                 if(!data) return;
                 for (let placa in data) {
                     const vence = new Date(data[placa].vencimiento);
-                    const hoy = new Date();
-                    const dias = Math.ceil((vence - hoy) / (1000 * 60 * 60 * 24));
-                    const estadoClase = dias > 0 ? "activo" : "vencido";
-                    const estadoTexto = dias > 0 ? dias + " d" : "VENC";
-                    tableBody.innerHTML += `<tr><td>${placa}</td><td>${vence.toLocaleDateString()}</td><td class="${estadoClase}">${estadoTexto}</td><td><button class="btn-del" onclick="deletePlate('${placa}')">🗑️</button></td></tr>`;
+                    const dias = Math.ceil((vence - new Date()) / (1000 * 60 * 60 * 24));
+                    tableBody.innerHTML += `<tr><td>${placa}</td><td class="${dias>0?'activo':'vencido'}">${dias>0?dias:'Venc'}</td><td><button style="width:auto; padding:5px; background:none; color:red;" onclick="deletePlate('${placa}')">🗑️</button></td></tr>`;
                 }
             });
         }
 
         window.deletePlate = async (placa) => {
-            if(confirm("¿Eliminar placa " + placa + "?")) {
+            if(confirm("¿Eliminar " + placa + "?")) {
                 await remove(ref(db, 'usuarios_moto/' + placa));
                 await remove(ref(db, 'conductores/' + placa));
             }
         };
-
-        window.clearMap = async () => { if(confirm("¿Limpiar conductores?")) { await set(ref(db, 'conductores/'), null); location.reload(); } };
     </script>
 </body>
 </html>
