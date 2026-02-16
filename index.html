@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -13,21 +12,10 @@
         :root { --primary: #ffcc00; --secondary: #007bff; --success: #28a745; --danger: #dc3545; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         
-        /* Aseguramos que el fondo no sea negro para no confundir si el mapa carga lento */
         body { font-family: 'Poppins', sans-serif; height: 100vh; background: #f0f0f0; overflow: hidden; position: relative; }
         
-        /* MAPA: Ocupa toda la pantalla de fondo */
-        #map { 
-            position: absolute; 
-            top: 0; 
-            bottom: 0; 
-            left: 0; 
-            right: 0; 
-            z-index: 1; 
-            background: #e5e3df; /* Color gris suave mientras carga */
-        }
+        #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; background: #e5e3df; }
 
-        /* BOTÓN ADMIN FLOTANTE */
         .btn-admin-top { 
             position: absolute; top: 15px; right: 15px; z-index: 2000;
             background: rgba(255, 255, 255, 0.9); color: #333; border: 1px solid #ddd;
@@ -35,46 +23,25 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
 
-        /* PANEL DESLIZABLE */
         .panel { 
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: white; 
-            z-index: 1000; 
-            padding: 10px 20px 25px 20px; 
-            border-radius: 25px 25px 0 0; 
-            box-shadow: 0 -5px 25px rgba(0,0,0,0.2);
-            transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            height: 40vh; /* Altura inicial */
-            overflow-y: auto;
+            position: absolute; bottom: 0; left: 0; width: 100%; background: white; 
+            z-index: 1000; padding: 10px 20px 25px 20px; border-radius: 25px 25px 0 0; 
+            box-shadow: 0 -5px 25px rgba(0,0,0,0.2); transition: height 0.3s ease;
+            height: 40vh; overflow-y: auto;
         }
 
-        .handle {
-            width: 50px; height: 6px; background: #ddd; border-radius: 10px;
-            margin: 0 auto 15px auto;
-        }
+        .handle { width: 50px; height: 6px; background: #ddd; border-radius: 10px; margin: 0 auto 15px auto; }
 
         h2 { font-size: 1.1rem; text-align: center; margin-bottom: 10px; color: #333; }
+        input { width: 100%; padding: 12px; margin: 5px 0; border: 2px solid #eee; border-radius: 12px; font-size: 16px; outline: none; font-family: inherit; }
         
-        input { 
-            width: 100%; padding: 12px; margin: 5px 0; 
-            border: 2px solid #eee; border-radius: 12px; 
-            font-size: 16px; outline: none; font-family: inherit;
-        }
-        
-        button { 
-            width: 100%; padding: 14px; border: none; border-radius: 12px; 
-            font-weight: 600; font-size: 15px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            margin-bottom: 8px;
-        }
+        button { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; }
         
         .btn-yellow { background: var(--primary); color: #000; }
         .btn-blue { background: var(--secondary); color: white; }
         .btn-ws { background: #25d366; color: white; }
         .btn-back { background: #444; color: white; margin-top: 5px; }
+        .btn-success { background: var(--success); color: white; }
 
         .table-container { width: 100%; margin-top: 10px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -122,7 +89,7 @@
             <div id="driver-online" class="hidden">
                 <h2 style="color: var(--success);">ESTÁS ACTIVO ✅</h2>
                 <button id="btn-status" class="btn-yellow" onclick="toggleStatus()">MARCAR OCUPADO</button>
-                <button class="btn-blue" style="background:var(--danger);" onclick="location.reload()">DESCONECTARSE</button>
+                <button class="btn-blue" style="background:var(--danger); color:white;" onclick="location.reload()">DESCONECTARSE</button>
             </div>
             <button class="btn-back" onclick="showView('view-start')">🔙 VOLVER</button>
         </div>
@@ -145,7 +112,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, get, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, get, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyC6Mcmm-TBrFuTiQ0IjIHq9XD620DNsI",
@@ -160,17 +127,16 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Inicializar Mapa con corrección de tamaño
         var map = L.map('map', { zoomControl: false }).setView([7.986, -75.193], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         var motoLayer = L.layerGroup().addTo(map);
-
-        // Forzar al mapa a recalcular su tamaño
         setTimeout(() => { map.invalidateSize(); }, 500);
 
         let driversData = {};
         let selectedDriver = null;
         let passengerPos = [7.986, -75.193];
+        let myPlate = "";
+        let myStatus = "disponible";
 
         window.togglePanel = () => {
             const p = document.getElementById('main-panel');
@@ -180,7 +146,6 @@
         window.showView = (id) => {
             document.querySelectorAll('.panel > div').forEach(div => div.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
-            document.getElementById('main-panel').style.height = '60vh';
         };
 
         window.goPassenger = () => {
@@ -222,7 +187,7 @@
         window.requestMoto = () => {
             if(!selectedDriver) return;
             const dest = document.getElementById('dest-input').value;
-            const msg = `Hola ${selectedDriver.nombre}, soy de Vibras Positivas. %0AMi ubicación: http://maps.google.com/?q=${passengerPos[0]},${passengerPos[1]} %0A🏁 Destino: ${dest || 'Por definir'}`;
+            const msg = `Hola ${selectedDriver.nombre}, soy de Vibras Positivas. Mi ubicación: https://www.google.com/maps?q=${passengerPos[0]},${passengerPos[1]} Destino: ${dest || 'Por definir'}`;
             window.open(`https://wa.me/57${selectedDriver.telefono}?text=${encodeURIComponent(msg)}`);
         };
 
@@ -235,23 +200,46 @@
         });
 
         window.startTracking = async () => {
-            const plate = document.getElementById('d-plate').value.toUpperCase().trim();
-            const snap = await get(ref(db, 'usuarios_moto/' + plate));
+            myPlate = document.getElementById('d-plate').value.toUpperCase().trim();
+            const snap = await get(ref(db, 'usuarios_moto/' + myPlate));
             if(snap.exists() && new Date() < new Date(snap.val().vencimiento)) {
                 navigator.geolocation.watchPosition(p => {
-                    set(ref(db, 'conductores/' + plate), { 
+                    update(ref(db, 'conductores/' + myPlate), { 
                         nombre: document.getElementById('d-name').value, 
                         telefono: document.getElementById('d-tel').value, 
-                        lat: p.coords.latitude, lng: p.coords.longitude, estado: 'disponible' 
+                        lat: p.coords.latitude, lng: p.coords.longitude, 
+                        estado: myStatus 
                     });
                 }, null, { enableHighAccuracy: true });
                 document.getElementById('driver-reg').classList.add('hidden');
                 document.getElementById('driver-online').classList.remove('hidden');
+                
+                // Guardar en local
+                localStorage.setItem('d-name', document.getElementById('d-name').value);
+                localStorage.setItem('d-tel', document.getElementById('d-tel').value);
+                localStorage.setItem('d-plate', myPlate);
             } else { alert("Suscripción inactiva."); }
         };
 
+        // --- FUNCIÓN DE CAMBIO DE ESTADO (FIXED) ---
+        window.toggleStatus = () => {
+            myStatus = (myStatus === 'disponible') ? 'ocupado' : 'disponible';
+            
+            const btn = document.getElementById('btn-status');
+            if(myStatus === 'ocupado') {
+                btn.innerText = "MARCAR COMO DISPONIBLE";
+                btn.className = "btn-success";
+            } else {
+                btn.innerText = "MARCAR COMO OCUPADO";
+                btn.className = "btn-yellow";
+            }
+
+            if(myPlate) {
+                update(ref(db, 'conductores/' + myPlate), { estado: myStatus });
+            }
+        };
+
         window.accessAdmin = () => { if(prompt("Clave:") === "vp1965") { showView('view-admin'); cargarHistorial(); document.getElementById('main-panel').style.height = '80vh'; } };
-        
         window.activatePlate = async () => {
             const p = document.getElementById('a-plate').value.toUpperCase().trim();
             let f = new Date(); f.setDate(f.getDate() + 30);
