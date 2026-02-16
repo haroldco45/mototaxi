@@ -9,36 +9,24 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     
     <style>
-        :root { --primary: #ffcc00; --secondary: #007bff; --dark: #333; --success: #28a745; --danger: #dc3545; }
+        :root { --primary: #ffcc00; --secondary: #007bff; --success: #28a745; --danger: #dc3545; }
         body { font-family: 'Poppins', sans-serif; margin: 0; background: #f8f9fa; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
-        
         #map { height: 60vh; width: 100%; z-index: 1; }
-
-        .panel { 
-            height: 40vh; background: white; z-index: 1000; padding: 15px; 
-            box-sizing: border-box; border-radius: 25px 25px 0 0; 
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.1); overflow-y: auto;
-        }
-
+        .panel { height: 40vh; background: white; z-index: 1000; padding: 15px; box-sizing: border-box; border-radius: 25px 25px 0 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); overflow-y: auto; }
         h2 { margin: 0 0 10px 0; font-size: 18px; text-align: center; }
         input { width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
-        button { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; margin-bottom: 8px; font-family: inherit; }
-        
+        button { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; margin-bottom: 8px; font-family: inherit; width: 100%; }
         .btn-yellow { background: var(--primary); color: #000; }
         .btn-blue { background: var(--secondary); color: white; }
         .btn-admin { background: #343a40; color: white; font-size: 11px; margin-top: 10px; }
         .btn-outline { background: none; border: 1px solid #ddd; color: #666; font-size: 13px; }
-
         .table-container { margin-top: 15px; border: 1px solid #eee; border-radius: 10px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #f8f9fa; }
         .vencido { color: var(--danger); font-weight: bold; }
         .activo { color: var(--success); font-weight: bold; }
-
-        .btn-del { background: none; color: var(--danger); border: none; font-size: 16px; cursor: pointer; padding: 5px; }
-
-        .btn-call { display: none; background: var(--success); color: white; text-decoration: none; text-align: center; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 18px; margin: 10px 0; }
+        .btn-del { background: none; color: var(--danger); border: none; font-size: 16px; cursor: pointer; width: auto; }
+        .btn-call { display: none; background: var(--success); color: white; text-decoration: none; text-align: center; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 18px; margin: 10px 0; display: block; }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -58,7 +46,7 @@
             <h2>Mapa de Motos</h2>
             <input type="text" id="dest-input" placeholder="🏁 Toca el mapa para tu destino" readonly>
             <div id="driver-name" style="text-align:center; font-weight:600; margin:5px; color: var(--secondary);"></div>
-            <a id="btn-call" href="#" class="btn-call">📞 LLAMAR CONDUCTOR</a>
+            <a id="btn-call" href="#" class="btn-call" style="display:none;">📞 LLAMAR CONDUCTOR</a>
             <button class="btn-outline" onclick="location.reload()">Volver</button>
         </div>
 
@@ -81,7 +69,6 @@
             <h2>Control de Suscripciones</h2>
             <input type="text" id="a-plate" placeholder="Escribir Placa a Activar">
             <button class="btn-yellow" onclick="activatePlate()">ACTIVAR 30 DÍAS</button>
-            
             <div class="table-container">
                 <table>
                     <thead><tr><th>Placa</th><th>Vence</th><th>Estado</th><th>Acción</th></tr></thead>
@@ -116,7 +103,6 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         var motoLayer = L.layerGroup().addTo(map);
 
-        // --- FUNCIÓN PARA CARGAR DATOS GUARDADOS AL INICIAR ---
         window.onload = () => {
             if(localStorage.getItem('d-name')) document.getElementById('d-name').value = localStorage.getItem('d-name');
             if(localStorage.getItem('d-tel')) document.getElementById('d-tel').value = localStorage.getItem('d-tel');
@@ -137,9 +123,7 @@
                     const iconUrl = d.estado === 'ocupado' 
                         ? 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png' 
                         : 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png';
-                    
                     const icon = L.icon({ iconUrl, iconSize: [25, 41], iconAnchor: [12, 41] });
-                    
                     L.marker([d.lat, d.lng], { icon }).addTo(motoLayer).on('click', () => {
                         if(d.estado === 'disponible') {
                             document.getElementById('btn-call').href = "tel:" + d.telefono;
@@ -151,33 +135,32 @@
             });
         };
 
+        map.on('click', (e) => {
+            if(!document.getElementById('view-passenger').classList.contains('hidden')) {
+                if(window.dest) map.removeLayer(window.dest);
+                window.dest = L.marker(e.latlng, { icon: L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png', iconSize: [25, 41] }) }).addTo(map);
+                document.getElementById('dest-input').value = "Destino Marcado ✅";
+            }
+        });
+
         let myPlate = "";
         let myStatus = "disponible";
-        
         window.startTracking = async () => {
             const name = document.getElementById('d-name').value.trim();
             const tel = document.getElementById('d-tel').value.trim();
             myPlate = document.getElementById('d-plate').value.toUpperCase().trim();
-
-            if(!name || !tel || !myPlate) return alert("Por favor completa todos los datos");
-
-            // --- GUARDAR EN LA MEMORIA DEL CELULAR ---
+            if(!name || !tel || !myPlate) return alert("Completa los datos");
             localStorage.setItem('d-name', name);
             localStorage.setItem('d-tel', tel);
             localStorage.setItem('d-plate', myPlate);
-
             const snap = await get(ref(db, 'usuarios_moto/' + myPlate));
             if(snap.exists() && new Date() < new Date(snap.val().vencimiento)) {
                 navigator.geolocation.watchPosition(p => {
-                    set(ref(db, 'conductores/' + myPlate), {
-                        nombre: name,
-                        telefono: tel,
-                        lat: p.coords.latitude, lng: p.coords.longitude, estado: myStatus
-                    });
+                    set(ref(db, 'conductores/' + myPlate), { nombre: name, telefono: tel, lat: p.coords.latitude, lng: p.coords.longitude, estado: myStatus });
                 }, null, { enableHighAccuracy: true });
                 document.getElementById('driver-reg').classList.add('hidden');
                 document.getElementById('driver-online').classList.remove('hidden');
-            } else { alert("Suscripción inactiva. Contacta al Administrador."); }
+            } else { alert("Suscripción inactiva."); }
         };
 
         window.toggleStatus = () => {
@@ -189,17 +172,14 @@
 
         window.accessAdmin = () => {
             const pass = prompt("Clave de Administrador:");
-            if(pass === "vp1965") { // <--- CAMBIA TU CLAVE AQUÍ
-                showView('view-admin');
-                cargarHistorial();
-            } else { alert("Clave incorrecta"); }
+            if(pass === "vp1965") { showView('view-admin'); cargarHistorial(); }
+            else { alert("Clave incorrecta"); }
         };
 
         window.activatePlate = async () => {
             const p = document.getElementById('a-plate').value.toUpperCase().trim();
             if(!p) return alert("Escribe la placa");
-            let f = new Date();
-            f.setDate(f.getDate() + 30);
+            let f = new Date(); f.setDate(f.getDate() + 30);
             await set(ref(db, 'usuarios_moto/' + p), { vencimiento: f.toISOString() });
             alert("✅ Placa " + p + " activada.");
             document.getElementById('a-plate').value = "";
@@ -231,13 +211,7 @@
         };
 
         window.logoutAdmin = () => { location.reload(); };
-
-        window.clearMap = async () => {
-            if(confirm("¿Limpiar conductores?")) {
-                await set(ref(db, 'conductores/'), null);
-                location.reload();
-            }
-        };
+        window.clearMap = async () => { if(confirm("¿Limpiar conductores?")) { await set(ref(db, 'conductores/'), null); location.reload(); } };
     </script>
 </body>
 </html>
