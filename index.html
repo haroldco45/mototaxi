@@ -3,86 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Vibras Positivas - Mobile</title>
+    <title>Vibras Positivas - Control Total</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     
     <style>
         :root { --primary: #ffcc00; --secondary: #007bff; --success: #28a745; --danger: #dc3545; --light: #f8f9fa; }
-        
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         
-        body { font-family: 'Poppins', sans-serif; height: 100vh; display: flex; flex-direction: column; background: #eee; overflow: hidden; }
+        body { font-family: 'Poppins', sans-serif; height: 100vh; display: flex; flex-direction: column; background: #000; overflow: hidden; }
         
-        /* El mapa ahora es flexible: se encoge si hay mucho texto abajo */
-        #map { flex: 1; min-height: 35vh; width: 100%; z-index: 1; }
+        /* Mapa de fondo */
+        #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
 
+        /* PANEL DESLIZABLE (Hoja de ruta) */
         .panel { 
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
             background: white; 
             z-index: 1000; 
-            padding: 15px; 
-            border-radius: 20px 20px 0 0; 
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            padding: 10px 20px 30px 20px; 
+            border-radius: 25px 25px 0 0; 
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.3);
+            transition: height 0.3s ease;
+            height: 45vh; /* Altura inicial */
             overflow-y: auto;
-            max-height: 65vh; /* Evita que tape todo el mapa */
-            display: flex;
-            flex-direction: column;
         }
 
-        h2 { font-size: 1.1rem; text-align: center; margin-bottom: 10px; color: #333; }
+        /* Tirador para deslizar el panel */
+        .handle {
+            width: 40px; height: 5px; background: #ccc; border-radius: 10px;
+            margin: 0 auto 15px auto; cursor: grab;
+        }
+
+        h2 { font-size: 1.2rem; text-align: center; margin-bottom: 10px; color: #333; }
         
-        /* Inputs más compactos para celular */
         input { 
-            width: 100%; padding: 10px; margin: 4px 0; 
-            border: 2px solid #eee; border-radius: 10px; 
+            width: 100%; padding: 12px; margin: 6px 0; 
+            border: 2px solid #f0f0f0; border-radius: 12px; 
             font-size: 16px; outline: none; font-family: inherit;
         }
         
-        /* Contenedor de botones para que siempre quepan */
-        .btn-group { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
-
         button { 
-            width: 100%; padding: 12px; border: none; border-radius: 10px; 
-            font-weight: 600; font-size: 14px; cursor: pointer;
+            width: 100%; padding: 14px; border: none; border-radius: 12px; 
+            font-weight: 600; font-size: 15px; cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 8px;
+            margin-bottom: 10px;
         }
         
         .btn-yellow { background: var(--primary); color: #000; }
         .btn-blue { background: var(--secondary); color: white; }
         .btn-ws { background: #25d366; color: white; }
-        .btn-back { background: #e9ecef; color: #495057; border: 1px solid #dee2e6; }
+        .btn-back { background: #444; color: white; margin-top: 5px; }
         
-        /* Botón de configuración bien pequeño y discreto */
-        .btn-config { background: none; color: #bbb; font-size: 10px; padding: 5px; margin-top: 5px; border: 1px dashed #ddd; }
+        .btn-admin-top { 
+            position: absolute; top: 15px; right: 15px; z-index: 2000;
+            background: rgba(0,0,0,0.5); color: white; border: none;
+            padding: 8px; border-radius: 50%; font-size: 18px; width: 40px; height: 40px;
+        }
 
-        .table-container { width: 100%; margin-top: 8px; overflow-x: auto; border: 1px solid #eee; border-radius: 8px; }
+        .table-container { width: 100%; margin-top: 10px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #eee; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
 
         .hidden { display: none !important; }
 
-        /* AJUSTE PARA PANTALLAS PEQUEÑAS */
-        @media (max-width: 380px) {
-            h2 { font-size: 0.9rem; }
-            button { padding: 10px; font-size: 13px; }
-            input { padding: 8px; font-size: 14px; }
-        }
+        /* Ajustes para cuando el panel se expande al escribir */
+        .panel:focus-within { height: 85vh; }
     </style>
 </head>
 <body>
 
+    <button class="btn-admin-top" onclick="accessAdmin()">⚙️</button>
+
     <div id="map"></div>
 
     <div class="panel" id="main-panel">
+        <div class="handle" onclick="expandPanel()"></div>
         
         <div id="view-start">
-            <h2>Vibras Positivas 🛺</h2>
-            <div class="btn-group">
-                <button class="btn-yellow" onclick="goPassenger()">📍 PEDIR MOTO ($5.000)</button>
-                <button class="btn-blue" onclick="showView('view-driver')">🛺 MODO CONDUCTOR</button>
-                <button class="btn-config" onclick="accessAdmin()">⚙️ CONFIGURACIÓN</button>
-            </div>
+            <h2 style="color: var(--secondary);">Vibras Positivas 🛺</h2>
+            <button class="btn-yellow" onclick="goPassenger()">📍 PEDIR MOTO ($5.000)</button>
+            <button class="btn-blue" onclick="showView('view-driver')">🛺 MODO CONDUCTOR</button>
         </div>
 
         <div id="view-passenger" class="hidden">
@@ -90,10 +95,10 @@
             <input type="text" id="search-plate" style="border: 2px solid var(--primary); text-align:center;" placeholder="PLACA (EJ: ABC12D)" oninput="searchMoto()">
             <input type="text" id="dest-input" placeholder="🏁 Destino (Toca el mapa)" readonly>
             
-            <div id="driver-selection" class="hidden" style="background: #f1f8ff; padding: 10px; border-radius: 12px; margin: 8px 0;">
-                <p id="driver-info" style="text-align: center; font-weight: 600; font-size: 13px; margin-bottom: 8px;"></p>
-                <button class="btn-ws" id="btn-request-ws" onclick="requestMoto()">📩 PEDIR POR WHATSAPP</button>
-                <button class="btn-blue" id="btn-call-direct" style="background: #444; margin-top:5px;">📞 LLAMAR</button>
+            <div id="driver-selection" class="hidden" style="background: #f1f8ff; padding: 15px; border-radius: 15px; margin-bottom: 10px;">
+                <p id="driver-info" style="text-align: center; font-weight: 600; margin-bottom: 10px;"></p>
+                <button class="btn-ws" onclick="requestMoto()">📩 PEDIR POR WHATSAPP</button>
+                <button class="btn-blue" id="btn-call-direct" style="background: #333;">📞 LLAMAR</button>
             </div>
             <button class="btn-back" onclick="location.reload()">🔙 VOLVER AL INICIO</button>
         </div>
@@ -111,11 +116,11 @@
                 <button id="btn-status" class="btn-yellow" onclick="toggleStatus()">MARCAR OCUPADO</button>
                 <button class="btn-blue" style="background:var(--danger);" onclick="location.reload()">DESCONECTARSE</button>
             </div>
-            <button class="btn-back" style="margin-top:10px;" onclick="showView('view-start')">🔙 VOLVER AL INICIO</button>
+            <button class="btn-back" onclick="showView('view-start')">🔙 VOLVER AL INICIO</button>
         </div>
 
         <div id="view-admin" class="hidden">
-            <h2>Administración</h2>
+            <h2>Panel de Control</h2>
             <input type="text" id="a-plate" placeholder="Activar Placa">
             <button class="btn-yellow" onclick="activatePlate()">ACTIVAR 30 DÍAS</button>
             
@@ -125,9 +130,8 @@
                     <tbody id="admin-table-body"></tbody>
                 </table>
             </div>
-            <button class="btn-back" style="margin-top:10px;" onclick="showView('view-start')">🔙 VOLVER AL INICIO</button>
+            <button class="btn-back" onclick="showView('view-start')">🔙 VOLVER AL INICIO</button>
         </div>
-
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -157,15 +161,16 @@
         let selectedDriver = null;
         let passengerPos = [7.986, -75.193];
 
-        navigator.geolocation.getCurrentPosition(p => {
-            passengerPos = [p.coords.latitude, p.coords.longitude];
-            L.circle(passengerPos, { radius: 15, color: 'blue' }).addTo(map);
-        });
+        // Función para agrandar el panel al tocar el tirador
+        window.expandPanel = () => {
+            const p = document.getElementById('main-panel');
+            p.style.height = p.style.height === '85vh' ? '45vh' : '85vh';
+        };
 
         window.showView = (id) => {
             document.querySelectorAll('.panel > div').forEach(div => div.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
-            document.getElementById('main-panel').scrollTop = 0;
+            document.getElementById('main-panel').style.height = '60vh'; // Ajuste automático
         };
 
         window.goPassenger = () => {
@@ -180,7 +185,10 @@
                         ? 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png' 
                         : 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png';
                     const icon = L.icon({ iconUrl, iconSize: [25, 41], iconAnchor: [12, 41] });
-                    L.marker([d.lat, d.lng], { icon }).addTo(motoLayer).on('click', () => selectFromMap(d, child.key));
+                    L.marker([d.lat, d.lng], { icon }).addTo(motoLayer).on('click', () => {
+                        selectFromMap(d, child.key);
+                        document.getElementById('main-panel').style.height = '85vh';
+                    });
                 });
             });
         };
@@ -191,7 +199,6 @@
             const color = d.estado === 'disponible' ? 'green' : 'red';
             document.getElementById('driver-info').innerHTML = `<span style="color:${color}">●</span> ${d.nombre} (${plate})`;
             document.getElementById('btn-call-direct').onclick = () => window.open("tel:" + d.telefono);
-            document.getElementById('btn-request-ws').style.display = d.estado === 'disponible' ? 'flex' : 'none';
         }
 
         window.searchMoto = () => {
@@ -218,28 +225,30 @@
             }
         });
 
-        // --- CONDUCTOR ---
+        // --- CONDUCTOR Y ADMIN ---
         window.startTracking = async () => {
-            const name = document.getElementById('d-name').value;
-            const tel = document.getElementById('d-tel').value;
             const plate = document.getElementById('d-plate').value.toUpperCase().trim();
             const snap = await get(ref(db, 'usuarios_moto/' + plate));
             if(snap.exists() && new Date() < new Date(snap.val().vencimiento)) {
                 navigator.geolocation.watchPosition(p => {
-                    set(ref(db, 'conductores/' + plate), { nombre: name, telefono: tel, lat: p.coords.latitude, lng: p.coords.longitude, estado: 'disponible' });
+                    set(ref(db, 'conductores/' + plate), { 
+                        nombre: document.getElementById('d-name').value, 
+                        telefono: document.getElementById('d-tel').value, 
+                        lat: p.coords.latitude, lng: p.coords.longitude, estado: 'disponible' 
+                    });
                 }, null, { enableHighAccuracy: true });
                 document.getElementById('driver-reg').classList.add('hidden');
                 document.getElementById('driver-online').classList.remove('hidden');
-            } else { alert("Placa no activa."); }
+            } else { alert("Suscripción inactiva."); }
         };
 
-        // --- ADMIN ---
-        window.accessAdmin = () => { if(prompt("Clave:") === "VP1965") { showView('view-admin'); cargarHistorial(); } };
+        window.accessAdmin = () => { if(prompt("Clave:") === "vp1965) { showView('view-admin'); cargarHistorial(); document.getElementById('main-panel').style.height = '85vh'; } };
+        
         window.activatePlate = async () => {
             const p = document.getElementById('a-plate').value.toUpperCase().trim();
             let f = new Date(); f.setDate(f.getDate() + 30);
             await set(ref(db, 'usuarios_moto/' + p), { vencimiento: f.toISOString() });
-            document.getElementById('a-plate').value = "";
+            alert("Activado");
         };
 
         function cargarHistorial() {
@@ -260,6 +269,7 @@
             document.getElementById('d-name').value = localStorage.getItem('d-name') || '';
             document.getElementById('d-tel').value = localStorage.getItem('d-tel') || '';
             document.getElementById('d-plate').value = localStorage.getItem('d-plate') || '';
+            navigator.geolocation.getCurrentPosition(p => passengerPos = [p.coords.latitude, p.coords.longitude]);
         };
     </script>
 </body>
