@@ -10,7 +10,7 @@
     
     <style>
         :root { --primary: #ffcc00; --secondary: #007bff; --dark: #333; --success: #28a745; --danger: #dc3545; }
-        body { font-family: 'Poppins', sans-serif; margin: 0; background: #f8f9fa; overflow: hidden; }
+        body { font-family: 'Poppins', sans-serif; margin: 0; background: #f8f9fa; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         
         #map { height: 60vh; width: 100%; z-index: 1; }
 
@@ -29,7 +29,6 @@
         .btn-admin { background: #343a40; color: white; font-size: 11px; margin-top: 10px; }
         .btn-outline { background: none; border: 1px solid #ddd; color: #666; font-size: 13px; }
 
-        /* Tabla de Admin */
         .table-container { margin-top: 15px; border: 1px solid #eee; border-radius: 10px; overflow: hidden; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
@@ -38,7 +37,6 @@
         .activo { color: var(--success); font-weight: bold; }
 
         .btn-call { display: none; background: var(--success); color: white; text-decoration: none; text-align: center; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 18px; margin: 10px 0; }
-
         .hidden { display: none !important; }
     </style>
 </head>
@@ -79,8 +77,8 @@
 
         <div id="view-admin" class="hidden">
             <h2>Control de Suscripciones</h2>
-            <input type="text" id="a-plate" placeholder="Placa a Activar (Ej: ABC123)">
-            <button class="btn-yellow" onclick="activatePlate()">ACTIVAR 30 DÍAS</button>
+            <input type="text" id="a-plate" placeholder="Escribir Placa (Ej: ABC123)">
+            <button class="btn-yellow" id="btn-activar" onclick="activatePlate()">ACTIVAR 30 DÍAS</button>
             
             <div class="table-container">
                 <table>
@@ -88,7 +86,6 @@
                     <tbody id="admin-table-body"></tbody>
                 </table>
             </div>
-            
             <button onclick="clearMap()" style="background:var(--danger); color:white; margin-top:15px; font-size:10px;">BORRAR CONEXIONES ACTIVAS</button>
             <button onclick="logoutAdmin()" style="background:#555; color:white; margin-top:10px;">🔒 CERRAR SESIÓN Y BLOQUEAR</button>
         </div>
@@ -134,8 +131,8 @@
                         if(d.estado === 'disponible') {
                             document.getElementById('btn-call').href = "tel:" + d.telefono;
                             document.getElementById('btn-call').style.display = 'block';
-                            document.getElementById('driver-name').innerText = "🛺 " + d.nombre;
-                        } else { alert("Moto ocupada en este momento"); }
+                            document.getElementById('driver-name').innerText = "🛺 Conductor: " + d.nombre;
+                        } else { alert("Moto ocupada actualmente"); }
                     });
                 });
             });
@@ -145,14 +142,14 @@
             if(!document.getElementById('view-passenger').classList.contains('hidden')) {
                 if(window.dest) map.removeLayer(window.dest);
                 window.dest = L.marker(e.latlng, { icon: L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png', iconSize: [25, 41] }) }).addTo(map);
-                document.getElementById('dest-input').value = "Destino Marcado 📍";
+                document.getElementById('dest-input').value = "Destino Marcado ✅";
             }
         });
 
         let myPlate = "";
         let myStatus = "disponible";
         window.startTracking = async () => {
-            myPlate = document.getElementById('d-plate').value.toUpperCase();
+            myPlate = document.getElementById('d-plate').value.toUpperCase().trim();
             if(!myPlate) return alert("Ingresa tu placa");
             const snap = await get(ref(db, 'usuarios_moto/' + myPlate));
             if(snap.exists() && new Date() < new Date(snap.val().vencimiento)) {
@@ -165,7 +162,7 @@
                 }, null, { enableHighAccuracy: true });
                 document.getElementById('driver-reg').classList.add('hidden');
                 document.getElementById('driver-online').classList.remove('hidden');
-            } else { alert("Suscripción vencida. Contacta al Admin."); }
+            } else { alert("Suscripción inactiva. Contacta al Administrador."); }
         };
 
         window.toggleStatus = () => {
@@ -175,19 +172,35 @@
             set(ref(db, 'conductores/' + myPlate + '/estado'), myStatus);
         };
 
-        // ADMIN SECTION
+        // ADMIN FUNCTIONS
         window.accessAdmin = () => {
             const pass = prompt("Clave de Administrador:");
-            // RECUERDA CAMBIAR EL "1234" POR TU CLAVE PRIVADA ABAJO
-            if(pass === "C9ma1la2018*") { 
+            if(pass === "C9ma1la2018*") { // <--- CAMBIA AQUÍ TU CLAVE
                 showView('view-admin');
                 cargarHistorial();
             } else { alert("Clave incorrecta"); }
         };
 
+        window.activatePlate = async () => {
+            const p = document.getElementById('a-plate').value.toUpperCase().trim();
+            if(!p) { alert("Escribe una placa"); return; }
+            
+            let f = new Date();
+            f.setDate(f.getDate() + 30);
+            
+            try {
+                await set(ref(db, 'usuarios_moto/' + p), { vencimiento: f.toISOString() });
+                alert("✅ Placa " + p + " activada por 30 días.");
+                document.getElementById('a-plate').value = "";
+            } catch (e) {
+                alert("Error de conexión");
+            }
+        };
+
         function cargarHistorial() {
             onValue(ref(db, 'usuarios_moto/'), (snap) => {
                 const tableBody = document.getElementById('admin-table-body');
+                if(!tableBody) return;
                 tableBody.innerHTML = "";
                 const data = snap.val();
                 if(!data) return;
@@ -202,22 +215,10 @@
             });
         }
 
-        window.logoutAdmin = () => {
-            if(confirm("¿Cerrar sesión de administrador?")) {
-                location.reload(); 
-            }
-        };
-
-        window.activatePlate = async () => {
-            const p = document.getElementById('a-plate').value.toUpperCase();
-            if(!p) return alert("Escribe la placa");
-            let f = new Date(); f.setDate(f.getDate() + 30);
-            await set(ref(db, 'usuarios_moto/' + p), { vencimiento: f.toISOString() });
-            alert("Placa " + p + " activada por 30 días.");
-        };
+        window.logoutAdmin = () => { if(confirm("¿Cerrar sesión?")) location.reload(); };
 
         window.clearMap = async () => {
-            if(confirm("¿Limpiar todos los conductores del mapa?")) {
+            if(confirm("¿Limpiar conductores activos?")) {
                 await set(ref(db, 'conductores/'), null);
                 location.reload();
             }
