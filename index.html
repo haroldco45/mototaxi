@@ -18,8 +18,8 @@
         button { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; margin-bottom: 8px; font-family: inherit; }
         .btn-yellow { background: var(--primary); color: #000; }
         .btn-blue { background: var(--secondary); color: white; }
-        .btn-admin { background: #343a40; color: white; font-size: 11px; margin-top: 10px; }
-        .btn-outline { background: #f1f3f5; border: 1px solid #ddd; color: #444; font-size: 14px; margin-top: 5px; }
+        .btn-admin { background: #343a40; color: white; font-size: 11px; margin-top: 10px; width: 100%; }
+        .btn-outline { background: #f1f3f5; border: 1px solid #ddd; color: #444; font-size: 14px; width: 100%; }
         .table-container { margin-top: 15px; border: 1px solid #eee; border-radius: 10px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
@@ -37,8 +37,8 @@
     <div class="panel">
         <div id="view-start">
             <h2 style="color: var(--secondary);">Vibras Positivas 🛺</h2>
-            <button class="btn-yellow" onclick="goPassenger()">PEDIR MOTO ($5.000)</button>
-            <button class="btn-blue" onclick="showView('view-driver')">MODO CONDUCTOR</button>
+            <button class="btn-yellow" onclick="goPassenger()" style="width:100%">PEDIR MOTO ($5.000)</button>
+            <button class="btn-blue" onclick="showView('view-driver')" style="width:100%">MODO CONDUCTOR</button>
             <button class="btn-admin" onclick="accessAdmin()">⚙️ CONFIGURACIÓN ADMIN</button>
         </div>
 
@@ -56,28 +56,28 @@
                 <input type="text" id="d-name" placeholder="Tu Nombre">
                 <input type="text" id="d-tel" placeholder="Tu WhatsApp">
                 <input type="text" id="d-plate" placeholder="Placa de la Moto">
-                <button class="btn-blue" onclick="startTracking()">CONECTARSE AL MAPA</button>
-                <button class="btn-outline" onclick="showView('view-start')">🔙 VOLVER AL INICIO</button>
+                <button class="btn-blue" style="width:100%" onclick="startTracking()">CONECTARSE AL MAPA</button>
             </div>
             <div id="driver-online" class="hidden">
                 <h2 style="color: var(--success);">¡Estás en Línea! ✅</h2>
-                <button id="btn-status" class="btn-yellow" onclick="toggleStatus()">MARCAR COMO OCUPADO</button>
-                <button class="btn-outline" onclick="location.reload()">DESCONECTARSE</button>
+                <button id="btn-status" class="btn-yellow" style="width:100%" onclick="toggleStatus()">MARCAR COMO OCUPADO</button>
+                <button class="btn-outline" onclick="location.reload()" style="background:var(--danger); color:white;">DESCONECTARSE</button>
             </div>
+            <button class="btn-outline" onclick="showView('view-start')" style="margin-top:10px;">🔙 VOLVER AL INICIO</button>
         </div>
 
         <div id="view-admin" class="hidden">
             <h2>Control de Suscripciones</h2>
             <input type="text" id="a-plate" placeholder="Escribir Placa a Activar">
-            <button class="btn-yellow" onclick="activatePlate()">ACTIVAR 30 DÍAS</button>
+            <button class="btn-yellow" style="width:100%" onclick="activatePlate()">ACTIVAR 30 DÍAS</button>
             <div class="table-container">
                 <table>
                     <thead><tr><th>Placa</th><th>Vence</th><th>Estado</th><th>Acción</th></tr></thead>
                     <tbody id="admin-table-body"></tbody>
                 </table>
             </div>
-            <button onclick="clearMap()" style="background:var(--danger); color:white; margin-top:15px; font-size:10px;">BORRAR CONEXIONES DEL MAPA</button>
-            <button class="btn-outline" onclick="showView('view-start')">🔙 VOLVER AL INICIO</button>
+            <button onclick="clearMap()" style="background:var(--danger); color:white; margin-top:15px; font-size:10px; width:100%">BORRAR CONEXIONES DEL MAPA</button>
+            <button class="btn-outline" onclick="showView('view-start')" style="margin-top:10px;">🔙 VOLVER AL INICIO</button>
         </div>
     </div>
 
