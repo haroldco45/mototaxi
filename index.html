@@ -85,12 +85,12 @@
             <div class="table-container">
                 <table>
                     <thead><tr><th>Placa</th><th>Vence</th><th>Estado</th></tr></thead>
-                    <tbody id="admin-table-body">
-                        </tbody>
+                    <tbody id="admin-table-body"></tbody>
                 </table>
             </div>
+            
             <button onclick="clearMap()" style="background:var(--danger); color:white; margin-top:15px; font-size:10px;">BORRAR CONEXIONES ACTIVAS</button>
-            <button class="btn-outline" onclick="location.reload()">Salir del Panel</button>
+            <button onclick="logoutAdmin()" style="background:#555; color:white; margin-top:10px;">🔒 CERRAR SESIÓN Y BLOQUEAR</button>
         </div>
     </div>
 
@@ -113,7 +113,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // MAPA
         var map = L.map('map', { zoomControl: false }).setView([7.986, -75.193], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         var motoLayer = L.layerGroup().addTo(map);
@@ -123,7 +122,6 @@
             document.getElementById(id).classList.remove('hidden');
         };
 
-        // PASAJERO
         window.goPassenger = () => {
             showView('view-passenger');
             onValue(ref(db, 'conductores/'), (snap) => {
@@ -151,7 +149,6 @@
             }
         });
 
-        // CONDUCTOR
         let myPlate = "";
         let myStatus = "disponible";
         window.startTracking = async () => {
@@ -178,12 +175,13 @@
             set(ref(db, 'conductores/' + myPlate + '/estado'), myStatus);
         };
 
-        // ADMIN (CON TABLA CORREGIDA)
+        // ADMIN SECTION
         window.accessAdmin = () => {
             const pass = prompt("Clave de Administrador:");
-            if(pass === "1234") { // Cambia 1234 por tu clave
+            // RECUERDA CAMBIAR EL "1234" POR TU CLAVE PRIVADA ABAJO
+            if(pass === "C9ma1la2018*") { 
                 showView('view-admin');
-                cargarHistorial(); // Activa la lectura de la tabla
+                cargarHistorial();
             } else { alert("Clave incorrecta"); }
         };
 
@@ -193,25 +191,22 @@
                 tableBody.innerHTML = "";
                 const data = snap.val();
                 if(!data) return;
-                
                 for (let placa in data) {
                     const vence = new Date(data[placa].vencimiento);
                     const hoy = new Date();
-                    const diff = vence - hoy;
-                    const dias = Math.ceil(diff / (1000 * 60 * 60 * 24));
-                    
+                    const dias = Math.ceil((vence - hoy) / (1000 * 60 * 60 * 24));
                     const estadoClase = dias > 0 ? "activo" : "vencido";
                     const estadoTexto = dias > 0 ? dias + " días" : "VENCIDO";
-                    
-                    tableBody.innerHTML += `
-                        <tr>
-                            <td>${placa}</td>
-                            <td>${vence.toLocaleDateString()}</td>
-                            <td class="${estadoClase}">${estadoTexto}</td>
-                        </tr>`;
+                    tableBody.innerHTML += `<tr><td>${placa}</td><td>${vence.toLocaleDateString()}</td><td class="${estadoClase}">${estadoTexto}</td></tr>`;
                 }
             });
         }
+
+        window.logoutAdmin = () => {
+            if(confirm("¿Cerrar sesión de administrador?")) {
+                location.reload(); 
+            }
+        };
 
         window.activatePlate = async () => {
             const p = document.getElementById('a-plate').value.toUpperCase();
