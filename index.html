@@ -3,50 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Vibras Positivas - App Oficial</title>
+    <title>Vibras Positivas - Mobile</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     
     <style>
-        :root { --primary: #ffcc00; --secondary: #007bff; --success: #28a745; --danger: #dc3545; --gray: #f4f4f4; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        :root { --primary: #ffcc00; --secondary: #007bff; --success: #28a745; --danger: #dc3545; --light: #f8f9fa; }
         
-        body { font-family: 'Poppins', sans-serif; margin: 0; background: #000; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         
-        #map { flex: 1; width: 100%; z-index: 1; min-height: 40vh; }
+        body { font-family: 'Poppins', sans-serif; height: 100vh; display: flex; flex-direction: column; background: #eee; overflow: hidden; }
+        
+        /* El mapa ahora es flexible: se encoge si hay mucho texto abajo */
+        #map { flex: 1; min-height: 35vh; width: 100%; z-index: 1; }
 
         .panel { 
-            background: white; z-index: 1000; padding: 15px; 
-            border-radius: 25px 25px 0 0; box-shadow: 0 -5px 25px rgba(0,0,0,0.2);
-            max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column;
+            background: white; 
+            z-index: 1000; 
+            padding: 15px; 
+            border-radius: 20px 20px 0 0; 
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            max-height: 65vh; /* Evita que tape todo el mapa */
+            display: flex;
+            flex-direction: column;
         }
 
-        h2 { margin: 0 0 10px 0; font-size: 1.1rem; text-align: center; color: #333; }
-        input { width: 100%; padding: 12px; margin: 5px 0; border: 2px solid var(--gray); border-radius: 12px; font-size: 16px; outline: none; font-family: inherit; }
+        h2 { font-size: 1.1rem; text-align: center; margin-bottom: 10px; color: #333; }
         
-        button { width: 100%; padding: 12px; border: none; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; }
+        /* Inputs más compactos para celular */
+        input { 
+            width: 100%; padding: 10px; margin: 4px 0; 
+            border: 2px solid #eee; border-radius: 10px; 
+            font-size: 16px; outline: none; font-family: inherit;
+        }
+        
+        /* Contenedor de botones para que siempre quepan */
+        .btn-group { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
+
+        button { 
+            width: 100%; padding: 12px; border: none; border-radius: 10px; 
+            font-weight: 600; font-size: 14px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
         
         .btn-yellow { background: var(--primary); color: #000; }
         .btn-blue { background: var(--secondary); color: white; }
         .btn-ws { background: #25d366; color: white; }
-        .btn-back { background: var(--gray); color: #555; border: 1px solid #ddd; }
-        .btn-danger { background: var(--danger); color: white; }
+        .btn-back { background: #e9ecef; color: #495057; border: 1px solid #dee2e6; }
+        
+        /* Botón de configuración bien pequeño y discreto */
+        .btn-config { background: none; color: #bbb; font-size: 10px; padding: 5px; margin-top: 5px; border: 1px dashed #ddd; }
 
-        /* Estilos de Tabla Responsiva */
-        .table-container { width: 100%; margin-top: 10px; overflow-x: auto; border-radius: 10px; border: 1px solid #eee; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 250px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #f8f9fa; }
+        .table-container { width: 100%; margin-top: 8px; overflow-x: auto; border: 1px solid #eee; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #eee; }
 
-        .search-box { background: #fffde7; border: 2px solid var(--primary); text-transform: uppercase; text-align: center; }
         .hidden { display: none !important; }
 
-        /* Ajustes para móviles pequeños */
-        @media (max-height: 650px) {
-            .panel { max-height: 70vh; }
-            h2 { font-size: 1rem; }
-            button { padding: 10px; font-size: 14px; }
+        /* AJUSTE PARA PANTALLAS PEQUEÑAS */
+        @media (max-width: 380px) {
+            h2 { font-size: 0.9rem; }
+            button { padding: 10px; font-size: 13px; }
+            input { padding: 8px; font-size: 14px; }
         }
     </style>
 </head>
@@ -55,24 +75,27 @@
     <div id="map"></div>
 
     <div class="panel" id="main-panel">
+        
         <div id="view-start">
-            <h2 style="color: var(--secondary);">Vibras Positivas 🛺</h2>
-            <button class="btn-yellow" onclick="goPassenger()">📍 PEDIR MOTO ($5.000)</button>
-            <button class="btn-blue" onclick="showView('view-driver')">🛺 MODO CONDUCTOR</button>
-            <button class="btn-back" style="font-size: 10px; padding: 5px;" onclick="accessAdmin()">⚙️ CONFIGURACIÓN</button>
+            <h2>Vibras Positivas 🛺</h2>
+            <div class="btn-group">
+                <button class="btn-yellow" onclick="goPassenger()">📍 PEDIR MOTO ($5.000)</button>
+                <button class="btn-blue" onclick="showView('view-driver')">🛺 MODO CONDUCTOR</button>
+                <button class="btn-config" onclick="accessAdmin()">⚙️ CONFIGURACIÓN</button>
+            </div>
         </div>
 
         <div id="view-passenger" class="hidden">
             <h2>Buscar Placa</h2>
-            <input type="text" id="search-plate" class="search-box" placeholder="EJ: ABC12D" oninput="searchMoto()">
-            <input type="text" id="dest-input" placeholder="🏁 Toca el mapa para el destino" readonly>
+            <input type="text" id="search-plate" style="border: 2px solid var(--primary); text-align:center;" placeholder="PLACA (EJ: ABC12D)" oninput="searchMoto()">
+            <input type="text" id="dest-input" placeholder="🏁 Destino (Toca el mapa)" readonly>
             
-            <div id="driver-selection" class="hidden" style="background: #f9f9f9; padding: 12px; border-radius: 15px; margin: 10px 0; border: 1px solid #eee;">
-                <p id="driver-info" style="margin: 0 0 10px 0; text-align: center; font-weight: 600;"></p>
+            <div id="driver-selection" class="hidden" style="background: #f1f8ff; padding: 10px; border-radius: 12px; margin: 8px 0;">
+                <p id="driver-info" style="text-align: center; font-weight: 600; font-size: 13px; margin-bottom: 8px;"></p>
                 <button class="btn-ws" id="btn-request-ws" onclick="requestMoto()">📩 PEDIR POR WHATSAPP</button>
-                <button class="btn-blue" id="btn-call-direct" style="background: #444;">📞 LLAMAR</button>
+                <button class="btn-blue" id="btn-call-direct" style="background: #444; margin-top:5px;">📞 LLAMAR</button>
             </div>
-            <button class="btn-back" onclick="location.reload()">🔙 VOLVER</button>
+            <button class="btn-back" onclick="location.reload()">🔙 VOLVER AL INICIO</button>
         </div>
 
         <div id="view-driver" class="hidden">
@@ -84,29 +107,27 @@
                 <button class="btn-blue" onclick="startTracking()">🚀 CONECTARSE</button>
             </div>
             <div id="driver-online" class="hidden">
-                <h2 style="color: var(--success);">¡EN LÍNEA! ✅</h2>
+                <h2 style="color: var(--success);">ESTÁS ACTIVO ✅</h2>
                 <button id="btn-status" class="btn-yellow" onclick="toggleStatus()">MARCAR OCUPADO</button>
-                <button class="btn-danger" onclick="location.reload()">DESCONECTARSE</button>
+                <button class="btn-blue" style="background:var(--danger);" onclick="location.reload()">DESCONECTARSE</button>
             </div>
-            <button class="btn-back" onclick="showView('view-start')">🔙 VOLVER</button>
+            <button class="btn-back" style="margin-top:10px;" onclick="showView('view-start')">🔙 VOLVER AL INICIO</button>
         </div>
 
         <div id="view-admin" class="hidden">
-            <h2>Gestión de Suscripciones</h2>
-            <input type="text" id="a-plate" placeholder="Placa a Activar">
+            <h2>Administración</h2>
+            <input type="text" id="a-plate" placeholder="Activar Placa">
             <button class="btn-yellow" onclick="activatePlate()">ACTIVAR 30 DÍAS</button>
             
             <div class="table-container">
                 <table>
-                    <thead>
-                        <tr><th>Placa</th><th>Días</th><th>Acción</th></tr>
-                    </thead>
-                    <tbody id="admin-table-body">
-                        </tbody>
+                    <thead><tr><th>Placa</th><th>Días</th><th></th></tr></thead>
+                    <tbody id="admin-table-body"></tbody>
                 </table>
             </div>
-            <button class="btn-back" style="margin-top:15px" onclick="showView('view-start')">🔙 VOLVER</button>
+            <button class="btn-back" style="margin-top:10px;" onclick="showView('view-start')">🔙 VOLVER AL INICIO</button>
         </div>
+
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -154,13 +175,12 @@
                 driversData = {};
                 snap.forEach(child => {
                     const d = child.val();
-                    const plate = child.key;
-                    driversData[plate] = d;
+                    driversData[child.key] = d;
                     const iconUrl = d.estado === 'ocupado' 
                         ? 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png' 
                         : 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png';
                     const icon = L.icon({ iconUrl, iconSize: [25, 41], iconAnchor: [12, 41] });
-                    L.marker([d.lat, d.lng], { icon }).addTo(motoLayer).on('click', () => selectFromMap(d, plate));
+                    L.marker([d.lat, d.lng], { icon }).addTo(motoLayer).on('click', () => selectFromMap(d, child.key));
                 });
             });
         };
@@ -168,25 +188,25 @@
         function selectFromMap(d, plate) {
             selectedDriver = { ...d, placa: plate };
             document.getElementById('driver-selection').classList.remove('hidden');
-            const color = d.estado === 'disponible' ? '#28a745' : '#dc3545';
+            const color = d.estado === 'disponible' ? 'green' : 'red';
             document.getElementById('driver-info').innerHTML = `<span style="color:${color}">●</span> ${d.nombre} (${plate})`;
             document.getElementById('btn-call-direct').onclick = () => window.open("tel:" + d.telefono);
             document.getElementById('btn-request-ws').style.display = d.estado === 'disponible' ? 'flex' : 'none';
         }
 
         window.searchMoto = () => {
-            const plateInput = document.getElementById('search-plate').value.toUpperCase().trim();
-            if(driversData[plateInput]) {
-                const d = driversData[plateInput];
+            const plate = document.getElementById('search-plate').value.toUpperCase().trim();
+            if(driversData[plate]) {
+                const d = driversData[plate];
                 map.flyTo([d.lat, d.lng], 17);
-                selectFromMap(d, plateInput);
+                selectFromMap(d, plate);
             }
         };
 
         window.requestMoto = () => {
             if(!selectedDriver) return;
             const dest = document.getElementById('dest-input').value;
-            const msg = `Hola ${selectedDriver.nombre}, te vi en Vibras Positivas. %0AMi ubicación: https://www.google.com/maps?q=${passengerPos[0]},${passengerPos[1]} %0A🏁 Destino: ${dest || 'Por definir'}`;
+            const msg = `Hola ${selectedDriver.nombre}, te vi en Vibras Positivas. %0AMi ubicación: http://maps.google.com/maps?q=${passengerPos[0]},${passengerPos[1]} %0A🏁 Destino: ${dest || 'Por definir'}`;
             window.open(`https://wa.me/57${selectedDriver.telefono}?text=${encodeURIComponent(msg)}`);
         };
 
@@ -199,40 +219,27 @@
         });
 
         // --- CONDUCTOR ---
-        let myPlate = "";
-        let myStatus = "disponible";
         window.startTracking = async () => {
             const name = document.getElementById('d-name').value;
             const tel = document.getElementById('d-tel').value;
-            myPlate = document.getElementById('d-plate').value.toUpperCase().trim();
-            if(!name || !tel || !myPlate) return alert("Faltan datos");
-
-            const snap = await get(ref(db, 'usuarios_moto/' + myPlate));
+            const plate = document.getElementById('d-plate').value.toUpperCase().trim();
+            const snap = await get(ref(db, 'usuarios_moto/' + plate));
             if(snap.exists() && new Date() < new Date(snap.val().vencimiento)) {
                 navigator.geolocation.watchPosition(p => {
-                    set(ref(db, 'conductores/' + myPlate), { nombre: name, telefono: tel, lat: p.coords.latitude, lng: p.coords.longitude, estado: myStatus });
+                    set(ref(db, 'conductores/' + plate), { nombre: name, telefono: tel, lat: p.coords.latitude, lng: p.coords.longitude, estado: 'disponible' });
                 }, null, { enableHighAccuracy: true });
                 document.getElementById('driver-reg').classList.add('hidden');
                 document.getElementById('driver-online').classList.remove('hidden');
-            } else { alert("Suscripción inactiva."); }
-        };
-
-        window.toggleStatus = () => {
-            myStatus = myStatus === 'disponible' ? 'ocupado' : 'disponible';
-            document.getElementById('btn-status').innerText = myStatus === 'disponible' ? 'MARCAR OCUPADO' : 'MARCAR DISPONIBLE';
-            set(ref(db, 'conductores/' + myPlate + '/estado'), myStatus);
+            } else { alert("Placa no activa."); }
         };
 
         // --- ADMIN ---
         window.accessAdmin = () => { if(prompt("Clave:") === "VP1965") { showView('view-admin'); cargarHistorial(); } };
-
         window.activatePlate = async () => {
             const p = document.getElementById('a-plate').value.toUpperCase().trim();
-            if(!p) return;
             let f = new Date(); f.setDate(f.getDate() + 30);
             await set(ref(db, 'usuarios_moto/' + p), { vencimiento: f.toISOString() });
             document.getElementById('a-plate').value = "";
-            alert("Placa " + p + " activada");
         };
 
         function cargarHistorial() {
@@ -241,31 +248,18 @@
                 tableBody.innerHTML = "";
                 const data = snap.val();
                 if(!data) return;
-                for (let placa in data) {
-                    const vence = new Date(data[placa].vencimiento);
-                    const dias = Math.ceil((vence - new Date()) / (1000 * 60 * 60 * 24));
-                    const color = dias > 0 ? 'green' : 'red';
-                    tableBody.innerHTML += `
-                        <tr>
-                            <td>${placa}</td>
-                            <td style="color:${color}; font-weight:bold;">${dias > 0 ? dias + 'd' : 'Vencido'}</td>
-                            <td><button style="padding:5px; background:none; color:red; width:auto;" onclick="eliminarPlaca('${placa}')">🗑️</button></td>
-                        </tr>`;
+                for (let plate in data) {
+                    const dias = Math.ceil((new Date(data[plate].vencimiento) - new Date()) / (1000 * 60 * 60 * 24));
+                    tableBody.innerHTML += `<tr><td>${plate}</td><td>${dias}d</td><td><button style="width:auto; padding:5px; background:none; color:red;" onclick="eliminarPlaca('${plate}')">🗑️</button></td></tr>`;
                 }
             });
         }
-
-        window.eliminarPlaca = async (p) => {
-            if(confirm("¿Eliminar " + p + "?")) {
-                await remove(ref(db, 'usuarios_moto/' + p));
-                await remove(ref(db, 'conductores/' + p));
-            }
-        };
+        window.eliminarPlaca = async (p) => { if(confirm("¿Borrar?")) { await remove(ref(db, 'usuarios_moto/' + p)); await remove(ref(db, 'conductores/' + p)); } };
 
         window.onload = () => {
-            if(localStorage.getItem('d-name')) document.getElementById('d-name').value = localStorage.getItem('d-name');
-            if(localStorage.getItem('d-tel')) document.getElementById('d-tel').value = localStorage.getItem('d-tel');
-            if(localStorage.getItem('d-plate')) document.getElementById('d-plate').value = localStorage.getItem('d-plate');
+            document.getElementById('d-name').value = localStorage.getItem('d-name') || '';
+            document.getElementById('d-tel').value = localStorage.getItem('d-tel') || '';
+            document.getElementById('d-plate').value = localStorage.getItem('d-plate') || '';
         };
     </script>
 </body>
