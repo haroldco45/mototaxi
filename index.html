@@ -29,12 +29,14 @@
         .btn-admin { background: #343a40; color: white; font-size: 11px; margin-top: 10px; }
         .btn-outline { background: none; border: 1px solid #ddd; color: #666; font-size: 13px; }
 
-        .table-container { margin-top: 15px; border: 1px solid #eee; border-radius: 10px; overflow: hidden; }
+        .table-container { margin-top: 15px; border: 1px solid #eee; border-radius: 10px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
         th { background: #f8f9fa; }
         .vencido { color: var(--danger); font-weight: bold; }
         .activo { color: var(--success); font-weight: bold; }
+
+        .btn-del { background: none; color: var(--danger); border: none; font-size: 16px; cursor: pointer; padding: 5px; }
 
         .btn-call { display: none; background: var(--success); color: white; text-decoration: none; text-align: center; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 18px; margin: 10px 0; }
         .hidden { display: none !important; }
@@ -77,17 +79,17 @@
 
         <div id="view-admin" class="hidden">
             <h2>Control de Suscripciones</h2>
-            <input type="text" id="a-plate" placeholder="Escribir Placa (Ej: ABC123)">
-            <button class="btn-yellow" id="btn-activar" onclick="activatePlate()">ACTIVAR 30 DÍAS</button>
+            <input type="text" id="a-plate" placeholder="Escribir Placa a Activar">
+            <button class="btn-yellow" onclick="activatePlate()">ACTIVAR 30 DÍAS</button>
             
             <div class="table-container">
                 <table>
-                    <thead><tr><th>Placa</th><th>Vence</th><th>Estado</th></tr></thead>
+                    <thead><tr><th>Placa</th><th>Vence</th><th>Estado</th><th>Acción</th></tr></thead>
                     <tbody id="admin-table-body"></tbody>
                 </table>
             </div>
-            <button onclick="clearMap()" style="background:var(--danger); color:white; margin-top:15px; font-size:10px;">BORRAR CONEXIONES ACTIVAS</button>
-            <button onclick="logoutAdmin()" style="background:#555; color:white; margin-top:10px;">🔒 CERRAR SESIÓN Y BLOQUEAR</button>
+            <button onclick="clearMap()" style="background:var(--danger); color:white; margin-top:15px; font-size:10px;">BORRAR CONEXIONES DEL MAPA</button>
+            <button onclick="logoutAdmin()" style="background:#555; color:white; margin-top:10px;">🔒 CERRAR SESIÓN</button>
         </div>
     </div>
 
@@ -95,7 +97,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, get, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyC6Mcmm-TBrFuTiQ0IjIHq9XD620DNsI",
@@ -125,8 +127,13 @@
                 motoLayer.clearLayers();
                 snap.forEach(child => {
                     const d = child.val();
-                    const iconUrl = d.estado === 'ocupado' ? 'https://cdn-icons-png.flaticon.com/512/3721/3721619.png' : 'https://cdn-icons-png.flaticon.com/512/3721/3721652.png';
-                    const icon = L.icon({ iconUrl, iconSize: [40, 40], iconAnchor: [20, 20] });
+                    // ICONOS DE GOTA (PINS) CORREGIDOS
+                    const iconUrl = d.estado === 'ocupado' 
+                        ? 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png' 
+                        : 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png';
+                    
+                    const icon = L.icon({ iconUrl, iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34] });
+                    
                     L.marker([d.lat, d.lng], { icon }).addTo(motoLayer).on('click', () => {
                         if(d.estado === 'disponible') {
                             document.getElementById('btn-call').href = "tel:" + d.telefono;
@@ -162,7 +169,7 @@
                 }, null, { enableHighAccuracy: true });
                 document.getElementById('driver-reg').classList.add('hidden');
                 document.getElementById('driver-online').classList.remove('hidden');
-            } else { alert("Suscripción inactiva. Contacta al Administrador."); }
+            } else { alert("Suscripción inactiva."); }
         };
 
         window.toggleStatus = () => {
@@ -172,10 +179,9 @@
             set(ref(db, 'conductores/' + myPlate + '/estado'), myStatus);
         };
 
-        // ADMIN FUNCTIONS
         window.accessAdmin = () => {
             const pass = prompt("Clave de Administrador:");
-            if(pass === "C9ma1la2018*") { // <--- CAMBIA AQUÍ TU CLAVE
+            if(pass === "vp1965") { // <--- NO OLVIDES CAMBIAR TU CLAVE AQUÍ
                 showView('view-admin');
                 cargarHistorial();
             } else { alert("Clave incorrecta"); }
@@ -183,18 +189,12 @@
 
         window.activatePlate = async () => {
             const p = document.getElementById('a-plate').value.toUpperCase().trim();
-            if(!p) { alert("Escribe una placa"); return; }
-            
+            if(!p) return alert("Escribe la placa");
             let f = new Date();
             f.setDate(f.getDate() + 30);
-            
-            try {
-                await set(ref(db, 'usuarios_moto/' + p), { vencimiento: f.toISOString() });
-                alert("✅ Placa " + p + " activada por 30 días.");
-                document.getElementById('a-plate').value = "";
-            } catch (e) {
-                alert("Error de conexión");
-            }
+            await set(ref(db, 'usuarios_moto/' + p), { vencimiento: f.toISOString() });
+            alert("✅ Placa " + p + " activada.");
+            document.getElementById('a-plate').value = "";
         };
 
         function cargarHistorial() {
@@ -210,15 +210,28 @@
                     const dias = Math.ceil((vence - hoy) / (1000 * 60 * 60 * 24));
                     const estadoClase = dias > 0 ? "activo" : "vencido";
                     const estadoTexto = dias > 0 ? dias + " días" : "VENCIDO";
-                    tableBody.innerHTML += `<tr><td>${placa}</td><td>${vence.toLocaleDateString()}</td><td class="${estadoClase}">${estadoTexto}</td></tr>`;
+                    tableBody.innerHTML += `
+                        <tr>
+                            <td>${placa}</td>
+                            <td>${vence.toLocaleDateString()}</td>
+                            <td class="${estadoClase}">${estadoTexto}</td>
+                            <td><button class="btn-del" onclick="deletePlate('${placa}')">🗑️</button></td>
+                        </tr>`;
                 }
             });
         }
 
-        window.logoutAdmin = () => { if(confirm("¿Cerrar sesión?")) location.reload(); };
+        window.deletePlate = async (placa) => {
+            if(confirm("¿Eliminar placa " + placa + "?")) {
+                await remove(ref(db, 'usuarios_moto/' + placa));
+                await remove(ref(db, 'conductores/' + placa));
+            }
+        };
+
+        window.logoutAdmin = () => { location.reload(); };
 
         window.clearMap = async () => {
-            if(confirm("¿Limpiar conductores activos?")) {
+            if(confirm("¿Limpiar conductores?")) {
                 await set(ref(db, 'conductores/'), null);
                 location.reload();
             }
