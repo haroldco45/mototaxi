@@ -3,87 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Vibras Positivas - Premium</title>
+    <title>Vibras Positivas - App Oficial</title>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    
     <style>
-        :root { --primary: #ffcc00; --secondary: #007bff; --dark: #333; --success: #28a745; }
-        body { font-family: 'Poppins', sans-serif; margin: 0; background: #f8f9fa; }
+        :root { --primary: #ffcc00; --secondary: #007bff; --dark: #333; --success: #28a745; --danger: #dc3545; }
+        body { font-family: 'Poppins', sans-serif; margin: 0; background: #f8f9fa; overflow: hidden; }
         
-        #map { height: 100vh; width: 100%; position: absolute; z-index: 1; }
+        #map { height: 60vh; width: 100%; z-index: 1; }
 
-        /* Panel Flotante Estilo Moderno */
-        .main-card {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            width: 90%; max-width: 400px; background: white; z-index: 1000;
-            border-radius: 20px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-            transition: all 0.3s ease;
+        .panel { 
+            height: 40vh; background: white; z-index: 1000; padding: 15px; 
+            box-sizing: border-box; border-radius: 25px 25px 0 0; 
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1); overflow-y: auto;
         }
 
-        h2 { margin: 0 0 15px 0; font-size: 18px; text-align: center; color: var(--dark); }
-        .price-tag { background: #fff3cd; color: #856404; padding: 5px 15px; border-radius: 50px; font-size: 14px; font-weight: bold; display: block; margin: 0 auto 15px; width: fit-content; }
-
-        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; font-family: inherit; }
-        button { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-bottom: 8px; font-family: inherit; }
+        h2 { margin: 0 0 10px 0; font-size: 18px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
+        button { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; margin-bottom: 8px; font-family: inherit; }
         
-        .btn-main { background: var(--primary); color: #000; }
-        .btn-sec { background: var(--secondary); color: white; }
-        .btn-outline { background: transparent; border: 1px solid #ddd; color: #666; font-size: 12px; }
+        .btn-yellow { background: var(--primary); color: #000; }
+        .btn-blue { background: var(--secondary); color: white; }
+        .btn-admin { background: #343a40; color: white; font-size: 11px; margin-top: 10px; }
+        .btn-outline { background: none; border: 1px solid #ddd; color: #666; font-size: 13px; }
 
-        .btn-call { display: none; background: var(--success); color: white; text-decoration: none; text-align: center; padding: 14px; border-radius: 12px; font-weight: 600; margin-top: 10px; }
+        /* Tabla de Admin */
+        .table-container { margin-top: 15px; border: 1px solid #eee; border-radius: 10px; overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; }
+        .vencido { color: var(--danger); font-weight: bold; }
+        .activo { color: var(--success); font-weight: bold; }
 
-        .hidden { display: none; }
-        
-        /* Notificación elegante */
-        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #ff4444; color: white; padding: 12px 25px; border-radius: 50px; z-index: 2000; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; }
+        .btn-call { display: none; background: var(--success); color: white; text-decoration: none; text-align: center; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 18px; margin: 10px 0; }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div id="toast"></div>
     <div id="map"></div>
 
-    <div class="main-card">
+    <div class="panel">
         <div id="view-start">
-            <h2>Vibras Positivas</h2>
-            <span class="price-tag">TARIFA FIJA: $5.000 COP</span>
-            <button class="btn-main" onclick="goPassenger()">PEDIR MOTO AHORA</button>
-            <button class="btn-sec" onclick="showView('view-driver')">MODO CONDUCTOR</button>
-            <button class="btn-outline" onclick="checkAdmin()">Panel Administrativo</button>
+            <h2 style="color: var(--secondary);">Vibras Positivas 🛺</h2>
+            <button class="btn-yellow" onclick="goPassenger()">PEDIR MOTO ($5.000)</button>
+            <button class="btn-blue" onclick="showView('view-driver')">MODO CONDUCTOR</button>
+            <button class="btn-admin" onclick="accessAdmin()">⚙️ CONFIGURACIÓN ADMIN</button>
         </div>
 
         <div id="view-passenger" class="hidden">
-            <h2>Pedir Servicio</h2>
-            <input type="text" id="dest" placeholder="📍 Destino (Toca el mapa)" readonly>
-            <div id="driver-info" style="text-align:center; font-size:14px; margin:10px; font-weight:600; color: var(--secondary);"></div>
-            <a id="btn-call" href="#" class="btn-call">📞 LLAMAR AL CONDUCTOR</a>
-            <button class="btn-outline" onclick="location.reload()">Cancelar y Volver</button>
+            <h2>Mapa de Motos</h2>
+            <input type="text" id="dest-input" placeholder="🏁 Toca el mapa para tu destino" readonly>
+            <div id="driver-name" style="text-align:center; font-weight:600; margin:5px; color: var(--secondary);"></div>
+            <a id="btn-call" href="#" class="btn-call">📞 LLAMAR CONDUCTOR</a>
+            <button class="btn-outline" onclick="location.reload()">Volver</button>
         </div>
 
         <div id="view-driver" class="hidden">
-            <div id="driver-form">
-                <h2>Registro de Conductor</h2>
+            <div id="driver-reg">
+                <h2>Registro Conductor</h2>
                 <input type="text" id="d-name" placeholder="Tu Nombre">
                 <input type="text" id="d-tel" placeholder="Tu WhatsApp">
                 <input type="text" id="d-plate" placeholder="Placa de la Moto">
-                <button class="btn-sec" onclick="startDriver()">ACTIVAR MI UBICACIÓN</button>
+                <button class="btn-blue" onclick="startTracking()">CONECTARSE AL MAPA</button>
             </div>
-            <div id="driver-status" class="hidden">
-                <h2 id="status-text">¡Estás en Línea!</h2>
-                <button id="toggle-btn" class="btn-main" onclick="toggleStatus()">MARCAR COMO OCUPADO</button>
+            <div id="driver-online" class="hidden">
+                <h2 style="color: var(--success);">¡Estás en Línea! ✅</h2>
+                <button id="btn-status" class="btn-yellow" onclick="toggleStatus()">MARCAR COMO OCUPADO</button>
             </div>
-            <button class="btn-outline" onclick="location.reload()">Cerrar Sesión</button>
+            <button class="btn-outline" onclick="location.reload()" style="margin-top:10px;">Cerrar Sesión</button>
         </div>
 
         <div id="view-admin" class="hidden">
-            <h2>Panel Admin</h2>
-            <input type="text" id="a-plate" placeholder="Placa a Activar">
-            <button class="btn-main" onclick="activatePlate()">ACTIVAR 30 DÍAS</button>
-            <button class="btn-outline" onclick="location.reload()">Salir</button>
+            <h2>Control de Suscripciones</h2>
+            <input type="text" id="a-plate" placeholder="Placa a Activar (Ej: ABC123)">
+            <button class="btn-yellow" onclick="activatePlate()">ACTIVAR 30 DÍAS</button>
+            
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Placa</th><th>Vence</th><th>Estado</th></tr></thead>
+                    <tbody id="admin-table-body">
+                        </tbody>
+                </table>
+            </div>
+            <button onclick="clearMap()" style="background:var(--danger); color:white; margin-top:15px; font-size:10px;">BORRAR CONEXIONES ACTIVAS</button>
+            <button class="btn-outline" onclick="location.reload()">Salir del Panel</button>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -101,37 +113,31 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Mapa con estilo
+        // MAPA
         var map = L.map('map', { zoomControl: false }).setView([7.986, -75.193], 15);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        var motoLayer = L.layerGroup().addTo(map);
 
         window.showView = (id) => {
-            document.querySelectorAll('.main-card > div').forEach(v => v.classList.add('hidden'));
+            document.querySelectorAll('.panel > div').forEach(div => div.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
         };
 
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.innerText = msg; t.style.display = 'block';
-            setTimeout(() => t.style.display = 'none', 3000);
-        }
-
-        // LÓGICA PASAJERO
+        // PASAJERO
         window.goPassenger = () => {
             showView('view-passenger');
-            const motoGroup = L.layerGroup().addTo(map);
             onValue(ref(db, 'conductores/'), (snap) => {
-                motoGroup.clearLayers();
+                motoLayer.clearLayers();
                 snap.forEach(child => {
                     const d = child.val();
-                    const color = d.estado === 'ocupado' ? 'red' : 'blue';
-                    const icon = L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`, iconSize: [25, 41] });
-                    L.marker([d.lat, d.lng], { icon }).addTo(motoGroup).on('click', () => {
+                    const iconUrl = d.estado === 'ocupado' ? 'https://cdn-icons-png.flaticon.com/512/3721/3721619.png' : 'https://cdn-icons-png.flaticon.com/512/3721/3721652.png';
+                    const icon = L.icon({ iconUrl, iconSize: [40, 40], iconAnchor: [20, 20] });
+                    L.marker([d.lat, d.lng], { icon }).addTo(motoLayer).on('click', () => {
                         if(d.estado === 'disponible') {
                             document.getElementById('btn-call').href = "tel:" + d.telefono;
                             document.getElementById('btn-call').style.display = 'block';
-                            document.getElementById('driver-info').innerText = "🛺 Conductor: " + d.nombre;
-                        } else { showToast("Esta moto está ocupada"); }
+                            document.getElementById('driver-name').innerText = "🛺 " + d.nombre;
+                        } else { alert("Moto ocupada en este momento"); }
                     });
                 });
             });
@@ -139,46 +145,87 @@
 
         map.on('click', (e) => {
             if(!document.getElementById('view-passenger').classList.contains('hidden')) {
-                if(window.markerD) map.removeLayer(window.markerD);
-                window.markerD = L.marker(e.latlng, { icon: L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png', iconSize: [25, 41] }) }).addTo(map);
-                document.getElementById('dest').value = "Destino Marcado ✅";
+                if(window.dest) map.removeLayer(window.dest);
+                window.dest = L.marker(e.latlng, { icon: L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png', iconSize: [25, 41] }) }).addTo(map);
+                document.getElementById('dest-input').value = "Destino Marcado 📍";
             }
         });
 
-        // LÓGICA CONDUCTOR
-        let pAct = "";
-        let eAct = "disponible";
-        window.startDriver = async () => {
-            pAct = document.getElementById('d-plate').value.toUpperCase();
-            const snap = await get(ref(db, 'usuarios_moto/' + pAct));
+        // CONDUCTOR
+        let myPlate = "";
+        let myStatus = "disponible";
+        window.startTracking = async () => {
+            myPlate = document.getElementById('d-plate').value.toUpperCase();
+            if(!myPlate) return alert("Ingresa tu placa");
+            const snap = await get(ref(db, 'usuarios_moto/' + myPlate));
             if(snap.exists() && new Date() < new Date(snap.val().vencimiento)) {
                 navigator.geolocation.watchPosition(p => {
-                    set(ref(db, 'conductores/' + pAct), { 
-                        nombre: document.getElementById('d-name').value, 
-                        telefono: document.getElementById('d-tel').value, 
-                        lat: p.coords.latitude, lng: p.coords.longitude, estado: eAct 
+                    set(ref(db, 'conductores/' + myPlate), {
+                        nombre: document.getElementById('d-name').value,
+                        telefono: document.getElementById('d-tel').value,
+                        lat: p.coords.latitude, lng: p.coords.longitude, estado: myStatus
                     });
                 }, null, { enableHighAccuracy: true });
-                document.getElementById('driver-form').classList.add('hidden');
-                document.getElementById('driver-status').classList.remove('hidden');
-            } else { showToast("Suscripción inactiva para " + pAct); }
+                document.getElementById('driver-reg').classList.add('hidden');
+                document.getElementById('driver-online').classList.remove('hidden');
+            } else { alert("Suscripción vencida. Contacta al Admin."); }
         };
 
         window.toggleStatus = () => {
-            eAct = eAct === "disponible" ? "ocupado" : "disponible";
-            const btn = document.getElementById('toggle-btn');
-            btn.innerText = eAct === "disponible" ? "MARCAR COMO OCUPADO" : "MARCAR COMO DISPONIBLE";
-            btn.className = eAct === "disponible" ? "btn-main" : "btn-sec";
-            set(ref(db, 'conductores/' + pAct + '/estado'), eAct);
+            myStatus = myStatus === 'disponible' ? 'ocupado' : 'disponible';
+            document.getElementById('btn-status').innerText = myStatus === 'disponible' ? 'MARCAR COMO OCUPADO' : 'MARCAR COMO DISPONIBLE';
+            document.getElementById('btn-status').className = myStatus === 'disponible' ? 'btn-yellow' : 'btn-success';
+            set(ref(db, 'conductores/' + myPlate + '/estado'), myStatus);
         };
 
-        // ADMIN
-        window.checkAdmin = () => { if(prompt("Clave:") === "colina81*") showView('view-admin'); };
-        window.activatePlate = () => {
+        // ADMIN (CON TABLA CORREGIDA)
+        window.accessAdmin = () => {
+            const pass = prompt("Clave de Administrador:");
+            if(pass === "1234") { // Cambia 1234 por tu clave
+                showView('view-admin');
+                cargarHistorial(); // Activa la lectura de la tabla
+            } else { alert("Clave incorrecta"); }
+        };
+
+        function cargarHistorial() {
+            onValue(ref(db, 'usuarios_moto/'), (snap) => {
+                const tableBody = document.getElementById('admin-table-body');
+                tableBody.innerHTML = "";
+                const data = snap.val();
+                if(!data) return;
+                
+                for (let placa in data) {
+                    const vence = new Date(data[placa].vencimiento);
+                    const hoy = new Date();
+                    const diff = vence - hoy;
+                    const dias = Math.ceil(diff / (1000 * 60 * 60 * 24));
+                    
+                    const estadoClase = dias > 0 ? "activo" : "vencido";
+                    const estadoTexto = dias > 0 ? dias + " días" : "VENCIDO";
+                    
+                    tableBody.innerHTML += `
+                        <tr>
+                            <td>${placa}</td>
+                            <td>${vence.toLocaleDateString()}</td>
+                            <td class="${estadoClase}">${estadoTexto}</td>
+                        </tr>`;
+                }
+            });
+        }
+
+        window.activatePlate = async () => {
             const p = document.getElementById('a-plate').value.toUpperCase();
+            if(!p) return alert("Escribe la placa");
             let f = new Date(); f.setDate(f.getDate() + 30);
-            set(ref(db, 'usuarios_moto/' + p), { vencimiento: f.toISOString() });
-            alert("Placa " + p + " activada");
+            await set(ref(db, 'usuarios_moto/' + p), { vencimiento: f.toISOString() });
+            alert("Placa " + p + " activada por 30 días.");
+        };
+
+        window.clearMap = async () => {
+            if(confirm("¿Limpiar todos los conductores del mapa?")) {
+                await set(ref(db, 'conductores/'), null);
+                location.reload();
+            }
         };
     </script>
 </body>
